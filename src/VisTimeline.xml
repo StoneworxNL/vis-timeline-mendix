@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<widget id="stoneworx.vistimeline.VisTimeline" pluginWidget="true" needsEntityContext="true" offlineCapable="true"
+        supportedPlatform="Web"
+        xmlns="http://www.mendix.com/widget/1.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.mendix.com/widget/1.0/ ../node_modules/mendix/custom_widget.xsd">
+    <name>Vis Timeline</name>
+    <description>Vis Timeline Mendix Pluggable Widget based on https://github.com/visjs/vis-timeline.</description>
+    <icon/>
+    <properties>
+        <propertyGroup caption="Item">
+             <property key="VisItemsDataSource" type="datasource" isList="true">
+                    <caption>Items</caption>
+                    <description />
+                </property>
+                <property key="ItemID" type="attribute" dataSource="VisItemsDataSource">
+                    <caption>Item ID</caption>
+                    <description />
+                    <attributeTypes>
+                        <attributeType name="Integer" />
+                        <attributeType name="String" />
+                    </attributeTypes>
+                </property>
+                <property key="ItemContent" type="attribute" dataSource="VisItemsDataSource">
+                    <caption>Content</caption>
+                    <description />
+                    <attributeTypes>
+                        <attributeType name="String" />
+                    </attributeTypes>
+                </property>
+                <property key="Start" type="attribute" dataSource="VisItemsDataSource">
+                    <caption>Start</caption>
+                    <description />
+                    <attributeTypes>
+                        <attributeType name="DateTime" />
+                    </attributeTypes>
+                </property>
+                <property key="End" type="attribute" dataSource="VisItemsDataSource">
+                    <caption>End</caption>
+                    <description />
+                    <attributeTypes>
+                        <attributeType name="DateTime" />
+                    </attributeTypes>
+                </property>
+                <property key="Type" type="attribute" dataSource="VisItemsDataSource">
+                    <caption>Type</caption>
+                    <description />
+                    <attributeTypes>
+                        <attributeType name="Enum" />
+                    </attributeTypes>
+                </property>
+        </propertyGroup>
+    </properties>
+</widget>
