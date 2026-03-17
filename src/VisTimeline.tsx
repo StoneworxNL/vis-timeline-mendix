@@ -5,7 +5,7 @@ import { VisTimelineContainerProps } from "../typings/VisTimelineProps";
 
 import "./ui/VisTimeline.css";
 
-export function VisTimeline({ VisItemsDataSource, ItemID, ItemContent, Start, End, Type, IsSnap }: VisTimelineContainerProps): ReactElement {
+export function VisTimeline({ VisItemsDataSource, ItemID, ItemContent, Start, End, Type, IsSnap, VisGroupsDataSource, GroupIDAttr, GroupContentAttr, ItemGroupID }: VisTimelineContainerProps): ReactElement {
     return <HelloWorldSample 
                 VisItemsDataSource = {VisItemsDataSource}
                 ItemID = {ItemID}
@@ -13,5 +13,9 @@ export function VisTimeline({ VisItemsDataSource, ItemID, ItemContent, Start, En
                 Start = {Start} 
                 End = {End} 
                 Type = {Type} 
-                IsSnap = {IsSnap} />;
+                IsSnap = {IsSnap}
+                VisGroupsDataSource = {VisGroupsDataSource}
+                GroupIDAttr = {GroupIDAttr}
+                GroupContentAttr = {GroupContentAttr}
+                ItemGroupID = {ItemGroupID} />;
 }

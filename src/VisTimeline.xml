@@ -7,47 +7,77 @@
     <description>Vis Timeline Mendix Pluggable Widget based on https://github.com/visjs/vis-timeline.</description>
     <icon/>
     <properties>
-        <propertyGroup caption="Item">
+        <propertyGroup caption="Groups">
+            <property key="VisGroupsDataSource" type="datasource" isList="true">
+                <caption>Group Source</caption>
+                <description>The source entity for the timeline rows (groups).</description>
+            </property>
+            <property key="GroupIDAttr" type="attribute" dataSource="VisGroupsDataSource">
+                <caption>Group ID</caption>
+                <description>Unique identifier for the group (typically an Integer or AutoNumber).</description>
+                <attributeTypes>
+                    <attributeType name="String"/>
+                    <attributeType name="Integer"/>
+                    <attributeType name="AutoNumber"/>
+                </attributeTypes>
+            </property>
+            <property key="GroupContentAttr" type="attribute" dataSource="VisGroupsDataSource">
+                <caption>Group Content</caption>
+                <description>The label displayed on the left side of the timeline.</description>
+                <attributeTypes>
+                    <attributeType name="String"/>
+                </attributeTypes>
+            </property>
+        </propertyGroup>
+        <propertyGroup caption="Items">
              <property key="VisItemsDataSource" type="datasource" isList="true">
-                    <caption>Items</caption>
-                    <description />
-                </property>
-                <property key="ItemID" type="attribute" dataSource="VisItemsDataSource">
-                    <caption>Item ID</caption>
-                    <description />
-                    <attributeTypes>
-                        <attributeType name="Integer" />
-                        <attributeType name="String" />
-                    </attributeTypes>
-                </property>
-                <property key="ItemContent" type="attribute" dataSource="VisItemsDataSource">
-                    <caption>Content</caption>
-                    <description />
-                    <attributeTypes>
-                        <attributeType name="String" />
-                    </attributeTypes>
-                </property>
-                <property key="Start" type="attribute" dataSource="VisItemsDataSource">
-                    <caption>Start</caption>
-                    <description />
-                    <attributeTypes>
-                        <attributeType name="DateTime" />
-                    </attributeTypes>
-                </property>
-                <property key="End" type="attribute" dataSource="VisItemsDataSource">
-                    <caption>End</caption>
-                    <description />
-                    <attributeTypes>
-                        <attributeType name="DateTime" />
-                    </attributeTypes>
-                </property>
-                <property key="Type" type="attribute" dataSource="VisItemsDataSource">
-                    <caption>Type</caption>
-                    <description />
-                    <attributeTypes>
-                        <attributeType name="Enum" />
-                    </attributeTypes>
-                </property>
+                <caption>Items</caption>
+                <description />
+            </property>
+            <property key="ItemID" type="attribute" dataSource="VisItemsDataSource">
+                <caption>Item ID</caption>
+                <description />
+                <attributeTypes>
+                    <attributeType name="Integer" />
+                    <attributeType name="String" />
+                </attributeTypes>
+            </property>
+            <property key="ItemGroupID" type="attribute" dataSource="VisItemsDataSource">
+                <caption>Item Group ID</caption>
+                <description>This value must match the Group ID above to place the item in the correct row.</description>
+                <attributeTypes>
+                    <attributeType name="String"/>
+                    <attributeType name="Integer"/>
+                </attributeTypes>
+            </property>
+            <property key="ItemContent" type="attribute" dataSource="VisItemsDataSource">
+                <caption>Content</caption>
+                <description />
+                <attributeTypes>
+                    <attributeType name="String" />
+                </attributeTypes>
+            </property>
+            <property key="Start" type="attribute" dataSource="VisItemsDataSource">
+                <caption>Start</caption>
+                <description />
+                <attributeTypes>
+                    <attributeType name="DateTime" />
+                </attributeTypes>
+            </property>
+            <property key="End" type="attribute" dataSource="VisItemsDataSource">
+                <caption>End</caption>
+                <description />
+                <attributeTypes>
+                    <attributeType name="DateTime" />
+                </attributeTypes>
+            </property>
+            <property key="Type" type="attribute" dataSource="VisItemsDataSource">
+                <caption>Type</caption>
+                <description />
+                <attributeTypes>
+                    <attributeType name="Enum" />
+                </attributeTypes>
+            </property>
         </propertyGroup>
          <propertyGroup caption="Options">
             <!-- <propertyGroup caption="Main">

@@ -12,8 +12,12 @@ export interface VisTimelineContainerProps {
     class: string;
     style?: CSSProperties;
     tabIndex?: number;
+    VisGroupsDataSource: ListValue;
+    GroupIDAttr: ListAttributeValue<string | Big>;
+    GroupContentAttr: ListAttributeValue<string>;
     VisItemsDataSource: ListValue;
     ItemID: ListAttributeValue<Big | string>;
+    ItemGroupID: ListAttributeValue<string | Big>;
     ItemContent: ListAttributeValue<string>;
     Start: ListAttributeValue<Date>;
     End: ListAttributeValue<Date>;
@@ -32,8 +36,12 @@ export interface VisTimelinePreviewProps {
     readOnly: boolean;
     renderMode: "design" | "xray" | "structure";
     translate: (text: string) => string;
+    VisGroupsDataSource: {} | { caption: string } | { type: string } | null;
+    GroupIDAttr: string;
+    GroupContentAttr: string;
     VisItemsDataSource: {} | { caption: string } | { type: string } | null;
     ItemID: string;
+    ItemGroupID: string;
     ItemContent: string;
     Start: string;
     End: string;
