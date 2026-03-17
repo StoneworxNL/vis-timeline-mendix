@@ -28,6 +28,20 @@
                     <attributeType name="String"/>
                 </attributeTypes>
             </property>
+            <property key="GroupValue" type="attribute" dataSource="VisGroupsDataSource">
+                <caption>Value</caption>
+                <description />
+                <attributeTypes>
+                    <attributeType name="Integer" />
+                </attributeTypes>
+            </property>
+            <property key="GroupClassName" type="attribute" dataSource="VisGroupsDataSource">
+                <caption>Class Name</caption>
+                <description />
+                <attributeTypes>
+                    <attributeType name="String" />
+                </attributeTypes>
+            </property>
         </propertyGroup>
         <propertyGroup caption="Items">
              <property key="VisItemsDataSource" type="datasource" isList="true">
@@ -76,6 +90,13 @@
                 <description />
                 <attributeTypes>
                     <attributeType name="Enum" />
+                </attributeTypes>
+            </property>
+            <property key="ItemClassName" type="attribute" dataSource="VisItemsDataSource">
+                <caption>Class Name</caption>
+                <description />
+                <attributeTypes>
+                    <attributeType name="String" />
                 </attributeTypes>
             </property>
         </propertyGroup>

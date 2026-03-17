@@ -15,6 +15,8 @@ export interface VisTimelineContainerProps {
     VisGroupsDataSource: ListValue;
     GroupIDAttr: ListAttributeValue<string | Big>;
     GroupContentAttr: ListAttributeValue<string>;
+    GroupValue: ListAttributeValue<Big>;
+    GroupClassName: ListAttributeValue<string>;
     VisItemsDataSource: ListValue;
     ItemID: ListAttributeValue<Big | string>;
     ItemGroupID: ListAttributeValue<string | Big>;
@@ -22,6 +24,7 @@ export interface VisTimelineContainerProps {
     Start: ListAttributeValue<Date>;
     End: ListAttributeValue<Date>;
     Type: ListAttributeValue<string>;
+    ItemClassName: ListAttributeValue<string>;
     IsSnap: DynamicValue<boolean>;
 }
 
@@ -39,6 +42,8 @@ export interface VisTimelinePreviewProps {
     VisGroupsDataSource: {} | { caption: string } | { type: string } | null;
     GroupIDAttr: string;
     GroupContentAttr: string;
+    GroupValue: string;
+    GroupClassName: string;
     VisItemsDataSource: {} | { caption: string } | { type: string } | null;
     ItemID: string;
     ItemGroupID: string;
@@ -46,5 +51,6 @@ export interface VisTimelinePreviewProps {
     Start: string;
     End: string;
     Type: string;
+    ItemClassName: string;
     IsSnap: string;
 }

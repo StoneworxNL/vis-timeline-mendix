@@ -10,6 +10,7 @@ export interface ItemProps {
     Start: ListAttributeValue<Date>;
     End: ListAttributeValue<Date>;
     Type: ListAttributeValue<string>;
+    ItemClassName: ListAttributeValue<string>;
 
     // Options
     IsSnap: DynamicValue<boolean>;
@@ -18,6 +19,8 @@ export interface ItemProps {
     VisGroupsDataSource: ListValue; // The entity representing groups
     GroupIDAttr: ListAttributeValue<any>;
     GroupContentAttr: ListAttributeValue<string>;
+    GroupClassName: ListAttributeValue<string>;
+    GroupValue: ListAttributeValue<Big>;
     
     // Link between Item and Group
     ItemGroupID: ListAttributeValue<any>; // Attribute on the Item entity that matches GroupID
@@ -59,8 +62,8 @@ export interface ItemProps {
 
 export function HelloWorldSample(props: ItemProps): ReactElement {
     const { 
-        VisItemsDataSource, ItemID, ItemContent, Start, End, Type, IsSnap,
-        VisGroupsDataSource, GroupIDAttr, GroupContentAttr, ItemGroupID 
+        VisItemsDataSource, ItemID, ItemContent, Start, End, Type, ItemClassName, IsSnap,
+        VisGroupsDataSource, GroupIDAttr, GroupContentAttr, ItemGroupID, GroupClassName, GroupValue
     } = props;
 
     const visRef = useRef<HTMLDivElement | null>(null);
@@ -98,7 +101,9 @@ export function HelloWorldSample(props: ItemProps): ReactElement {
         if (VisGroupsDataSource.status === "available" && VisGroupsDataSource.items) {
             const formattedGroups = VisGroupsDataSource.items.map(group => ({
                 id: GroupIDAttr.get(group).displayValue,
-                content: GroupContentAttr.get(group).value
+                content: GroupContentAttr.get(group).value,
+                value: GroupValue.get(group).value,
+                className: GroupClassName.get(group).value
             }));
             groupsRef.current.update(formattedGroups);
         }
@@ -126,7 +131,8 @@ export function HelloWorldSample(props: ItemProps): ReactElement {
                 start: Start.get(item).value,
                 end: End.get(item).value,
                 type: Type.get(item).value,
-                content: ItemContent.get(item).value
+                content: ItemContent.get(item).value,
+                className: ItemClassName.get(item).value
             }));
             itemsRef.current.update(formattedItems);
             timelineRef.current?.fit();
