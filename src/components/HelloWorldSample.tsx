@@ -103,7 +103,7 @@ export function HelloWorldSample(props: ItemProps): ReactElement {
             itemsRef.current.update(formattedItems);
             timelineRef.current?.fit();
         }
-    }, [VisItemsDataSource.items, ItemID, ItemContent, Start, End, Type, ItemGroupID]);
+    }, [VisItemsDataSource.status, VisItemsDataSource.items?.length]);
 
     return <div ref={visRef} />;
 }
