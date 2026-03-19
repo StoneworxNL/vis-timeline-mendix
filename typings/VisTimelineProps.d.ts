@@ -4,7 +4,7 @@
  * @author Mendix Widgets Framework Team
  */
 import { CSSProperties } from "react";
-import { DynamicValue, ListValue, ListAttributeValue } from "mendix";
+import { ActionValue, DynamicValue, ListValue, Option, ListAttributeValue } from "mendix";
 import { Big } from "big.js";
 
 export interface VisTimelineContainerProps {
@@ -26,6 +26,7 @@ export interface VisTimelineContainerProps {
     Type: ListAttributeValue<string>;
     ItemClassName: ListAttributeValue<string>;
     IsSnap: DynamicValue<boolean>;
+    clickAction?: ActionValue<{ clickedItemID: Option<string> }>;
 }
 
 export interface VisTimelinePreviewProps {
@@ -53,4 +54,5 @@ export interface VisTimelinePreviewProps {
     Type: string;
     ItemClassName: string;
     IsSnap: string;
+    clickAction: {} | null;
 }

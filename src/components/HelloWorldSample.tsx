@@ -1,6 +1,6 @@
 import { ReactElement, useRef, useEffect } from "react";
 import { Timeline, DataSet } from "vis-timeline/standalone";
-import { ListValue, ListAttributeValue, DynamicValue } from "mendix";
+import { ListValue, ListAttributeValue, DynamicValue, ActionValue } from "mendix";
 import "vis-timeline/styles/vis-timeline-graph2d.min.css";
 
 export interface ItemProps {
@@ -24,12 +24,15 @@ export interface ItemProps {
     
     // Link between Item and Group
     ItemGroupID: ListAttributeValue<any>; // Attribute on the Item entity that matches GroupID
+
+    clickAction: ActionValue<{ clickedItemID: string }> | undefined;
 }
 
 export function HelloWorldSample(props: ItemProps): ReactElement {
     const { 
         VisItemsDataSource, ItemID, ItemContent, Start, End, Type, ItemClassName, /*IsSnap,*/
-        VisGroupsDataSource, GroupIDAttr, GroupContentAttr, ItemGroupID, GroupClassName, GroupValue
+        VisGroupsDataSource, GroupIDAttr, GroupContentAttr, ItemGroupID, GroupClassName, GroupValue,
+        clickAction
     } = props;
 
     const visRef = useRef<HTMLDivElement | null>(null);
@@ -39,9 +42,6 @@ export function HelloWorldSample(props: ItemProps): ReactElement {
     const itemsRef = useRef<DataSet<any>>(new DataSet());
     const groupsRef = useRef<DataSet<any>>(new DataSet());
 
-
-    // const [selectedId, setSelectedId] = useState<string | null>(null);
-
     // Initialize Timeline 
     useEffect(() => {
         if (visRef.current && !timelineRef.current && VisGroupsDataSource.status === 'available') {
@@ -50,16 +50,20 @@ export function HelloWorldSample(props: ItemProps): ReactElement {
             // Check if we actually have groups to show
             const hasGroups = VisGroupsDataSource.items && VisGroupsDataSource.items.length > 0;
             
-            hasGroups ? timelineRef.current = new Timeline(
-                visRef.current, 
-                itemsRef.current, 
-                groupsRef.current, 
-                options
-            ) : timelineRef.current = new Timeline(
-                visRef.current, 
-                itemsRef.current, 
-                options
-            );
+            hasGroups ? timelineRef.current = new Timeline(visRef.current, itemsRef.current, groupsRef.current, options
+            ) : timelineRef.current = new Timeline(visRef.current, itemsRef.current, options);
+
+            // On Click Event
+            timelineRef.current.on("click", function (properties) {
+                if (properties.item != null) {
+                    const id = String(properties.item);
+
+                    if (clickAction && clickAction.canExecute) {
+                        clickAction.execute({clickedItemID: id});
+                    }
+                }
+            });
+
         }
  
     }, [VisGroupsDataSource.status]); // Re-init if data source existence changes

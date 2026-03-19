@@ -113,5 +113,14 @@
                 </property>
             </propertyGroup>
         </propertyGroup>
+        <propertyGroup caption="Events">
+            <property key="clickAction" type="action">
+                <caption>On click</caption>
+                <description>Action to be performed when item is clicked.</description>
+                <actionVariables>
+                    <actionVariable key="clickedItemID" type="String" caption="Clicked Item ID" />
+                </actionVariables>
+            </property>
+        </propertyGroup>
     </properties>
 </widget>
