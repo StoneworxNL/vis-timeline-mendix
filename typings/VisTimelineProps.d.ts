@@ -27,6 +27,7 @@ export interface VisTimelineContainerProps {
     ItemClassName: ListAttributeValue<string>;
     IsSnap: DynamicValue<boolean>;
     clickAction?: ActionValue<{ clickedItemID: Option<string> }>;
+    doubleClickAction?: ActionValue<{ doubleClickedItemID: Option<string> }>;
 }
 
 export interface VisTimelinePreviewProps {
@@ -55,4 +56,5 @@ export interface VisTimelinePreviewProps {
     ItemClassName: string;
     IsSnap: string;
     clickAction: {} | null;
+    doubleClickAction: {} | null;
 }

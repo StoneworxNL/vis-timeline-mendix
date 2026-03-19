@@ -26,13 +26,14 @@ export interface ItemProps {
     ItemGroupID: ListAttributeValue<any>; // Attribute on the Item entity that matches GroupID
 
     clickAction: ActionValue<{ clickedItemID: string }> | undefined;
+    doubleClickAction: ActionValue<{ doubleClickedItemID: string }> | undefined;
 }
 
 export function HelloWorldSample(props: ItemProps): ReactElement {
     const { 
         VisItemsDataSource, ItemID, ItemContent, Start, End, Type, ItemClassName, /*IsSnap,*/
         VisGroupsDataSource, GroupIDAttr, GroupContentAttr, ItemGroupID, GroupClassName, GroupValue,
-        clickAction
+        clickAction, doubleClickAction
     } = props;
 
     const visRef = useRef<HTMLDivElement | null>(null);
@@ -60,6 +61,20 @@ export function HelloWorldSample(props: ItemProps): ReactElement {
 
                     if (clickAction && clickAction.canExecute) {
                         clickAction.execute({clickedItemID: id});
+                    }
+                }
+            });
+
+            // On Double Click Event
+            timelineRef.current.on("doubleClick", function (properties) {
+                
+                if (properties.what !== "item") return; // To prevent event from being triggered twice. Might need further improvement.
+
+                if (properties.item != null) {
+                    const id = String(properties.item);
+
+                    if (doubleClickAction && doubleClickAction.canExecute) {
+                        doubleClickAction.execute({doubleClickedItemID: id});
                     }
                 }
             });

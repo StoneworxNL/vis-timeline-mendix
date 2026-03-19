@@ -121,6 +121,13 @@
                     <actionVariable key="clickedItemID" type="String" caption="Clicked Item ID" />
                 </actionVariables>
             </property>
+            <property key="doubleClickAction" type="action">
+                <caption>On double click</caption>
+                <description>Action to be performed when item is double-clicked.</description>
+                <actionVariables>
+                    <actionVariable key="doubleClickedItemID" type="String" caption="Double clicked Item ID" />
+                </actionVariables>
+            </property>
         </propertyGroup>
     </properties>
 </widget>
