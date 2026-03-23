@@ -23,10 +23,11 @@ export interface ItemProps {
     GroupValue: ListAttributeValue<Big>;
     
     // Link between Item and Group
-    ItemGroupID: ListAttributeValue<any>; // Attribute on the Item entity that matches GroupID
+    ItemGroupID: ListAttributeValue<string>; // Attribute on the Item entity that matches GroupID
     groupAssociation: ListReferenceSetValue | undefined;
     groupVisible: ListAttributeValue<boolean> | undefined;
     groupShowNested: ListAttributeValue<boolean> | undefined;
+    treeLevel: ListAttributeValue<Big> | undefined;
 
     // Event actions
     clickAction: ActionValue<{ clickedItemID: string }> | undefined;
@@ -42,7 +43,7 @@ export function HelloWorldSample(props: ItemProps): ReactElement {
         VisItemsDataSource, ItemID, ItemContent, Start, End, Type, ItemClassName, /*IsSnap,*/
         VisGroupsDataSource, GroupIDAttr, GroupContentAttr, ItemGroupID, GroupClassName, GroupValue,
         clickAction, doubleClickAction, onUpdateAction, onAddAction, onRemoveAction, onInitialDrawCompleteAction,
-        groupAssociation, groupVisible, groupShowNested
+        groupAssociation, groupVisible, groupShowNested, treeLevel
     } = props;
 
     const visRef = useRef<HTMLDivElement | null>(null);
@@ -116,6 +117,7 @@ export function HelloWorldSample(props: ItemProps): ReactElement {
                     value: GroupValue.get(group).value,
                     className: GroupClassName.get(group).value,
                     visible: groupVisible ? groupVisible.get(group).value : true,
+                    treeLevel: treeLevel ? treeLevel.get(group).value : 1,
                     showNested: groupShowNested ? groupShowNested.get(group).value : false,
                     
                     ...(nestedValues.length > 0 && { nestedGroups: nestedValues })

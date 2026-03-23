@@ -7,7 +7,7 @@ import "./ui/VisTimeline.css";
 
 export function VisTimeline({ VisItemsDataSource, ItemID, ItemContent, Start, End, Type, IsSnap, VisGroupsDataSource, GroupIDAttr, GroupContentAttr, ItemGroupID, ItemClassName, GroupClassName, 
         GroupValue, clickAction, doubleClickAction, onAddAction, onUpdateAction, onRemoveAction, onInitialDrawCompleteAction,
-        groupAssociation, groupVisible, groupShowNested }: VisTimelineContainerProps): ReactElement {
+        groupAssociation, groupVisible, groupShowNested, treeLevel }: VisTimelineContainerProps): ReactElement {
     return <HelloWorldSample 
                 VisItemsDataSource = {VisItemsDataSource}
                 ItemID = {ItemID}
@@ -31,5 +31,6 @@ export function VisTimeline({ VisItemsDataSource, ItemID, ItemContent, Start, En
                 onInitialDrawCompleteAction = {onInitialDrawCompleteAction}
                 groupAssociation = {groupAssociation}
                 groupVisible = {groupVisible}
-                groupShowNested = {groupShowNested} />;
+                groupShowNested = {groupShowNested}
+                treeLevel = {treeLevel} />;
 }

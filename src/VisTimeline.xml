@@ -63,6 +63,13 @@
                     <attributeType name="Boolean" />
                 </attributeTypes>
             </property>
+            <property key="treeLevel" type="attribute" dataSource="VisGroupsDataSource" required="false">
+                <caption>Group Tree Level</caption>
+                <description />
+                <attributeTypes>
+                    <attributeType name="Integer" />
+                </attributeTypes>
+            </property>
         </propertyGroup>
         <propertyGroup caption="Items">
              <property key="VisItemsDataSource" type="datasource" isList="true">
@@ -82,7 +89,6 @@
                 <description>This value must match the Group ID above to place the item in the correct row.</description>
                 <attributeTypes>
                     <attributeType name="String"/>
-                    <attributeType name="Integer"/>
                 </attributeTypes>
             </property>
             <property key="ItemContent" type="attribute" dataSource="VisItemsDataSource">
