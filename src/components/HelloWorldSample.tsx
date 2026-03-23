@@ -25,6 +25,8 @@ export interface ItemProps {
     // Link between Item and Group
     ItemGroupID: ListAttributeValue<any>; // Attribute on the Item entity that matches GroupID
     groupAssociation: ListReferenceSetValue | undefined;
+    groupVisible: ListAttributeValue<boolean> | undefined;
+    groupShowNested: ListAttributeValue<boolean> | undefined;
 
     // Event actions
     clickAction: ActionValue<{ clickedItemID: string }> | undefined;
@@ -40,7 +42,7 @@ export function HelloWorldSample(props: ItemProps): ReactElement {
         VisItemsDataSource, ItemID, ItemContent, Start, End, Type, ItemClassName, /*IsSnap,*/
         VisGroupsDataSource, GroupIDAttr, GroupContentAttr, ItemGroupID, GroupClassName, GroupValue,
         clickAction, doubleClickAction, onUpdateAction, onAddAction, onRemoveAction, onInitialDrawCompleteAction,
-        groupAssociation
+        groupAssociation, groupVisible, groupShowNested
     } = props;
 
     const visRef = useRef<HTMLDivElement | null>(null);
@@ -103,17 +105,22 @@ export function HelloWorldSample(props: ItemProps): ReactElement {
     // Effect to Update Groups
     useEffect(() => {
         if (VisGroupsDataSource.status === "available" && VisGroupsDataSource.items) {
-            const formattedGroups = VisGroupsDataSource.items.map(group => ({
-                id: GroupIDAttr.get(group).value,
-                content: GroupContentAttr.get(group).value,
-                value: GroupValue.get(group).value,
-                className: GroupClassName.get(group).value,
-                nestedGroups: groupAssociation
-                    ? groupAssociation.get(group).value?.map(nestedg =>
-                        GroupIDAttr.get(nestedg).value
-                        ) ?? []
-                    : []
-            }));
+            const formattedGroups = VisGroupsDataSource.items.map(group => {
+                const nestedValues = groupAssociation
+                    ? groupAssociation.get(group).value?.map(nestedg => GroupIDAttr.get(nestedg).value) ?? []
+                    : [];
+
+                return {
+                    id: GroupIDAttr.get(group).value,
+                    content: GroupContentAttr.get(group).value,
+                    value: GroupValue.get(group).value,
+                    className: GroupClassName.get(group).value,
+                    visible: groupVisible ? groupVisible.get(group).value : true,
+                    showNested: groupShowNested ? groupShowNested.get(group).value : false,
+                    
+                    ...(nestedValues.length > 0 && { nestedGroups: nestedValues })
+                }
+            });
             groupsRef.current.update(formattedGroups);
         }
     }, [VisGroupsDataSource.items]);

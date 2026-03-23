@@ -18,6 +18,8 @@ export interface VisTimelineContainerProps {
     GroupValue: ListAttributeValue<Big>;
     GroupClassName: ListAttributeValue<string>;
     groupAssociation?: ListReferenceSetValue;
+    groupVisible?: ListAttributeValue<boolean>;
+    groupShowNested?: ListAttributeValue<boolean>;
     VisItemsDataSource: ListValue;
     ItemID: ListAttributeValue<Big | string>;
     ItemGroupID: ListAttributeValue<string | Big>;
@@ -52,6 +54,8 @@ export interface VisTimelinePreviewProps {
     GroupValue: string;
     GroupClassName: string;
     groupAssociation: string;
+    groupVisible: string;
+    groupShowNested: string;
     VisItemsDataSource: {} | { caption: string } | { type: string } | null;
     ItemID: string;
     ItemGroupID: string;

@@ -49,6 +49,20 @@
                         <associationType name="ReferenceSet"/>
                     </associationTypes>
             </property>
+            <property key="groupVisible" type="attribute" dataSource="VisGroupsDataSource" required="false">
+                <caption>Group Visible?</caption>
+                <description />
+                <attributeTypes>
+                    <attributeType name="Boolean" />
+                </attributeTypes>
+            </property>
+            <property key="groupShowNested" type="attribute" dataSource="VisGroupsDataSource" required="false">
+                <caption>Show Nested Groups?</caption>
+                <description />
+                <attributeTypes>
+                    <attributeType name="Boolean" />
+                </attributeTypes>
+            </property>
         </propertyGroup>
         <propertyGroup caption="Items">
              <property key="VisItemsDataSource" type="datasource" isList="true">
