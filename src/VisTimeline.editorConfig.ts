@@ -88,6 +88,17 @@ export function getProperties(values: VisTimelinePreviewProps, defaultProperties
         hidden.push("hiddenDateStart", "hiddenDateEnd", "hiddenDateRepeat");
     }
 
+    // A scope only means something once the action next to it is configured.
+    if (!values.clickAction) {
+        hidden.push("clickScope");
+    }
+    if (!values.doubleClickAction) {
+        hidden.push("doubleClickScope");
+    }
+    if (!values.contextMenuAction) {
+        hidden.push("contextMenuScope");
+    }
+
     if (!values.clusterItems) {
         hidden.push("clusterMaxItems", "clusterFitOnDoubleClick", "clusterShowStipes", "clusterTitleTemplate");
     }

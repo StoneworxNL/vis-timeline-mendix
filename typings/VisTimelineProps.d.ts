@@ -39,6 +39,12 @@ export type MoveModeEnum = "moveAndCallAction" | "callAction";
 
 export type RemoveModeEnum = "callAction" | "removeAndCallAction";
 
+export type ClickScopeEnum = "item" | "anywhere";
+
+export type DoubleClickScopeEnum = "item" | "anywhere";
+
+export type ContextMenuScopeEnum = "item" | "anywhere";
+
 export type AnimationEasingEnum = "linear" | "easeInQuad" | "easeOutQuad" | "easeInOutQuad" | "easeInCubic" | "easeOutCubic" | "easeInOutCubic" | "easeInQuart" | "easeOutQuart" | "easeInOutQuart" | "easeInQuint" | "easeOutQuint" | "easeInOutQuint";
 
 export interface VisTimelineContainerProps {
@@ -179,8 +185,11 @@ export interface VisTimelineContainerProps {
     moveMode: MoveModeEnum;
     removeMode: RemoveModeEnum;
     clickAction?: ActionValue<{ clickedItemID: Option<string>; clickedGroupID: Option<string>; clickedTime: Option<Date>; clickedWhat: Option<string> }>;
+    clickScope: ClickScopeEnum;
     doubleClickAction?: ActionValue<{ doubleClickedItemID: Option<string>; doubleClickedGroupID: Option<string>; doubleClickedTime: Option<Date>; doubleClickedWhat: Option<string> }>;
+    doubleClickScope: DoubleClickScopeEnum;
     contextMenuAction?: ActionValue<{ contextItemID: Option<string>; contextGroupID: Option<string>; contextTime: Option<Date>; contextWhat: Option<string> }>;
+    contextMenuScope: ContextMenuScopeEnum;
     itemOverAction?: ActionValue<{ hoveredItemID: Option<string> }>;
     itemOutAction?: ActionValue<{ unhoveredItemID: Option<string> }>;
     dropAction?: ActionValue<{ droppedData: Option<string>; droppedTime: Option<Date>; droppedGroupID: Option<string> }>;
@@ -353,8 +362,11 @@ export interface VisTimelinePreviewProps {
     moveMode: MoveModeEnum;
     removeMode: RemoveModeEnum;
     clickAction: {} | null;
+    clickScope: ClickScopeEnum;
     doubleClickAction: {} | null;
+    doubleClickScope: DoubleClickScopeEnum;
     contextMenuAction: {} | null;
+    contextMenuScope: ContextMenuScopeEnum;
     itemOverAction: {} | null;
     itemOutAction: {} | null;
     dropAction: {} | null;

@@ -644,9 +644,16 @@ function registerEvents(timeline: Timeline, propsRef: PropsRef, appliedSelection
     // key. Ignoring those is what keeps a microflow from running twice on a single click.
     const isPrimary = (properties: any): boolean => properties != null && "what" in properties;
 
+    // Clicking the background, the time axis or a group label is still a click as far as
+    // vis-timeline is concerned. Reporting those to an action that expects an item id is what the
+    // scope settings guard against.
+    const inScope = (scope: "item" | "anywhere", properties: any): boolean =>
+        scope === "anywhere" || properties?.item != null;
+
     timeline.on("click", properties => {
-        if (isPrimary(properties)) {
-            fireAction(propsRef.current.clickAction, {
+        const props = propsRef.current;
+        if (isPrimary(properties) && inScope(props.clickScope, properties)) {
+            fireAction(props.clickAction, {
                 clickedItemID: idToString(properties.item),
                 clickedGroupID: idToString(properties.group),
                 clickedTime: toDate(properties.time),
@@ -656,8 +663,9 @@ function registerEvents(timeline: Timeline, propsRef: PropsRef, appliedSelection
     });
 
     timeline.on("doubleClick", properties => {
-        if (isPrimary(properties)) {
-            fireAction(propsRef.current.doubleClickAction, {
+        const props = propsRef.current;
+        if (isPrimary(properties) && inScope(props.doubleClickScope, properties)) {
+            fireAction(props.doubleClickAction, {
                 doubleClickedItemID: idToString(properties.item),
                 doubleClickedGroupID: idToString(properties.group),
                 doubleClickedTime: toDate(properties.time),
@@ -667,11 +675,13 @@ function registerEvents(timeline: Timeline, propsRef: PropsRef, appliedSelection
     });
 
     timeline.on("contextmenu", properties => {
-        if (!propsRef.current.contextMenuAction) {
+        const props = propsRef.current;
+        if (!props.contextMenuAction || !inScope(props.contextMenuScope, properties)) {
             return;
         }
+        // Only take the browser menu away where the widget actually answers the right click.
         properties?.event?.preventDefault?.();
-        fireAction(propsRef.current.contextMenuAction, {
+        fireAction(props.contextMenuAction, {
             contextItemID: idToString(properties.item),
             contextGroupID: idToString(properties.group),
             contextTime: toDate(properties.time),

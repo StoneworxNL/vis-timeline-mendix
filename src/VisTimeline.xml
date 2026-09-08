@@ -827,7 +827,7 @@
                     <caption>Horizontal scroll</caption>
                     <description>Move the window with the scroll wheel.</description>
                 </property>
-                <property key="horizontalScrollInvert" type="boolean" defaultValue="true">
+                <property key="horizontalScrollInvert" type="boolean" defaultValue="false">
                     <caption>Invert horizontal scroll</caption>
                     <description>Invert the direction of horizontal scrolling.</description>
                 </property>
@@ -985,13 +985,25 @@
             <propertyGroup caption="Mouse">
                 <property key="clickAction" type="action" required="false">
                     <caption>On click</caption>
-                    <description>Triggered on every click on the timeline.</description>
+                    <description>Triggered when the timeline is clicked.</description>
                     <actionVariables>
                         <actionVariable key="clickedItemID" type="String" caption="Clicked item ID" />
                         <actionVariable key="clickedGroupID" type="String" caption="Clicked group ID" />
                         <actionVariable key="clickedTime" type="DateTime" caption="Clicked time" />
                         <actionVariable key="clickedWhat" type="String" caption="Clicked what" />
                     </actionVariables>
+                </property>
+                <property key="clickScope" type="enumeration" defaultValue="item">
+                    <caption>On click fires for</caption>
+                    <description>
+                        Items only keeps the action from running when the user clicks empty space, the time axis or a
+                        group label, so it can count on an item ID being filled in. Anywhere reports those clicks as
+                        well, with an empty item ID and the kind of thing that was hit in the "what" variable.
+                    </description>
+                    <enumerationValues>
+                        <enumerationValue key="item">Items only</enumerationValue>
+                        <enumerationValue key="anywhere">Anywhere on the timeline</enumerationValue>
+                    </enumerationValues>
                 </property>
                 <property key="doubleClickAction" type="action" required="false">
                     <caption>On double click</caption>
@@ -1003,10 +1015,24 @@
                         <actionVariable key="doubleClickedWhat" type="String" caption="Double clicked what" />
                     </actionVariables>
                 </property>
+                <property key="doubleClickScope" type="enumeration" defaultValue="item">
+                    <caption>On double click fires for</caption>
+                    <description>
+                        Items only keeps the action from running when the user double clicks empty space, the time axis
+                        or a
+                        group label, so it can count on an item ID being filled in. Anywhere reports those clicks as
+                        well, with an empty item ID and the kind of thing that was hit in the "what" variable.
+                    </description>
+                    <enumerationValues>
+                        <enumerationValue key="item">Items only</enumerationValue>
+                        <enumerationValue key="anywhere">Anywhere on the timeline</enumerationValue>
+                    </enumerationValues>
+                </property>
                 <property key="contextMenuAction" type="action" required="false">
                     <caption>On context menu</caption>
                     <description>
-                        Triggered on right click. The browser context menu is suppressed when this action is configured.
+                        Triggered on right click. The browser context menu is suppressed wherever this action
+                        fires.
                     </description>
                     <actionVariables>
                         <actionVariable key="contextItemID" type="String" caption="Item ID" />
@@ -1014,6 +1040,19 @@
                         <actionVariable key="contextTime" type="DateTime" caption="Time" />
                         <actionVariable key="contextWhat" type="String" caption="What" />
                     </actionVariables>
+                </property>
+                <property key="contextMenuScope" type="enumeration" defaultValue="item">
+                    <caption>On context menu fires for</caption>
+                    <description>
+                        Items only keeps the action from running when the user right clicks empty space, the time axis
+                        or a
+                        group label, so it can count on an item ID being filled in. Anywhere reports those clicks as
+                        well, with an empty item ID and the kind of thing that was hit in the "what" variable.
+                    </description>
+                    <enumerationValues>
+                        <enumerationValue key="item">Items only</enumerationValue>
+                        <enumerationValue key="anywhere">Anywhere on the timeline</enumerationValue>
+                    </enumerationValues>
                 </property>
                 <property key="itemOverAction" type="action" required="false">
                     <caption>On item hover</caption>
@@ -1044,7 +1083,10 @@
             <propertyGroup caption="Timeline">
                 <property key="selectAction" type="action" required="false">
                     <caption>On select</caption>
-                    <description>Triggered when the selection changes by user interaction.</description>
+                    <description>
+                        Triggered when the selection changes by user interaction, including when it is cleared by
+                        clicking empty space.
+                    </description>
                     <actionVariables>
                         <actionVariable key="selectedItemIDs" type="String" caption="Selected item IDs" />
                     </actionVariables>
