@@ -11,7 +11,6 @@
 >
     <name>Vis Timeline</name>
     <description>Vis Timeline Mendix Pluggable Widget based on https://github.com/visjs/vis-timeline.</description>
-    <helpUrl>https://visjs.github.io/vis-timeline/docs/timeline/</helpUrl>
     <icon />
     <properties>
         <propertyGroup caption="Items">
