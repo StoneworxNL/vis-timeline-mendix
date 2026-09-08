@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "classnames": "^2.5.1",
-    "vis-timeline": "^8.5.0"
+    "vis-timeline": "^8.5.4"
   },
   "resolutions": {
     "react": "19.0.0",
