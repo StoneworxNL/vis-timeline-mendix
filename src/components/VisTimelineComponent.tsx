@@ -14,7 +14,16 @@ import {
 import "vis-timeline/styles/vis-timeline-graph2d.min.css";
 
 import { VisTimelineContainerProps } from "../../typings/VisTimelineProps";
-import { buildGroups, buildItems, buildMarkers, signature, VisGroup, VisItem, VisMarker } from "../utils/data";
+import {
+    buildGroups,
+    buildItems,
+    buildMarkers,
+    itemsRange,
+    signature,
+    VisGroup,
+    VisItem,
+    VisMarker
+} from "../utils/data";
 import { buildStaticOptions } from "../utils/options";
 import { runCommand } from "../utils/commands";
 import { defaultSnap, visMoment } from "../utils/vis";
@@ -57,6 +66,7 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
     const appliedSelectionRef = useRef<VisId[]>([]);
     const lastCommandRef = useRef<string | undefined>(undefined);
     const pendingFitRef = useRef(0);
+    const warnedAboutFitRef = useRef(false);
     const appliedOptionsRef = useRef<string | undefined>(undefined);
 
     const containersRef = useRef(new Map<string, TemplateContainer>());
@@ -77,7 +87,22 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const markers = useMemo(() => buildMarkers(props), [props.markersDataSource]);
 
-    objectsRef.current = { items: itemObjects, groups: groupObjects };
+    // Mendix reports `loading` while it refreshes a data source, handing out an empty list in the
+    // meantime. Applying that would clear the timeline and flash it back a moment later, so
+    // whatever is on screen is kept until real data arrives.
+    const itemsSettled = props.VisItemsDataSource.status !== "loading";
+    const groupsSettled = props.VisGroupsDataSource?.status !== "loading";
+    const markersSettled = props.markersDataSource?.status !== "loading";
+
+    if (itemsSettled) {
+        objectsRef.current.items = itemObjects;
+    }
+    if (groupsSettled) {
+        objectsRef.current.groups = groupObjects;
+    }
+
+    const itemsRef = useRef(items);
+    itemsRef.current = items;
 
     const staticOptions = buildStaticOptions(props);
     const staticOptionsRef = useRef(staticOptions);
@@ -141,6 +166,32 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         []
     );
 
+    // vis-timeline's own fit() measures the rendered width of every item and throws for items that
+    // sit in a collapsed nested group, which would leave the window stranded wherever it started.
+    // Its result is the nicer one, so it is tried first and the data range is the safety net.
+    const fitToItems = useCallback((animationOptions: TimelineAnimationOptions) => {
+        const timeline = timelineRef.current;
+        if (!timeline) {
+            return;
+        }
+        try {
+            timeline.redraw();
+            timeline.fit(animationOptions);
+            return;
+        } catch (error) {
+            // Expected whenever items live in a collapsed nested group, so it is only worth saying
+            // once - the fallback below still lands the window on the data.
+            if (!warnedAboutFitRef.current) {
+                warnedAboutFitRef.current = true;
+                console.warn("VisTimeline: vis-timeline could not measure the items, using the data range.", error);
+            }
+        }
+        const range = itemsRange(itemsRef.current);
+        if (range) {
+            timeline.setWindow(range.start, range.end, animationOptions);
+        }
+    }, []);
+
     const functionOptions = useMemo(() => buildFunctionOptions(propsRef, templateContainer), [templateContainer]);
 
     // The timeline is created once. Options, data, markers, window and selection are pushed in by
@@ -189,6 +240,9 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         if (!timeline) {
             return;
         }
+        if (!groupsSettled) {
+            return;
+        }
         const removed = syncDataSet(groupsDataSetRef.current, groups, groupSignaturesRef.current);
         dropContainers(["group"], removed);
 
@@ -199,7 +253,7 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
                 hasGroups ? (groupsDataSetRef.current as unknown as DataGroupCollectionType) : undefined
             );
         }
-    }, [groups, dropContainers]);
+    }, [groups, groupsSettled, dropContainers]);
 
     const windowStart = props.windowStart?.value;
     const windowEnd = props.windowEnd?.value;
@@ -208,6 +262,9 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
     useEffect(() => {
         const timeline = timelineRef.current;
         if (!timeline) {
+            return;
+        }
+        if (!itemsSettled) {
             return;
         }
         const removed = syncDataSet(itemsDataSetRef.current, items, itemSignaturesRef.current);
@@ -221,28 +278,25 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         if (!shouldFit) {
             return;
         }
+        // The very first fit lands the window on the data; animating that from wherever the
+        // timeline happened to open just makes the page look like it is still loading.
+        const fitAnimation: TimelineAnimationOptions = hasFittedRef.current ? animation() : { animation: false };
         hasFittedRef.current = true;
         // fit() derives the window from the rendered width of the items, so it has to wait until
         // the timeline has been laid out. Fitting straight after a data change - which is what the
         // previous version did - produces a window that is orders of magnitude too wide.
         cancelAnimationFrame(pendingFitRef.current);
-        pendingFitRef.current = requestAnimationFrame(() => {
-            const current = timelineRef.current;
-            if (current) {
-                current.redraw();
-                current.fit(animation());
-            }
-        });
-    }, [items, dropContainers, animation, fitOnDataChange, windowStart, windowEnd]);
+        pendingFitRef.current = requestAnimationFrame(() => fitToItems(fitAnimation));
+    }, [items, itemsSettled, dropContainers, animation, fitToItems, fitOnDataChange, windowStart, windowEnd]);
 
     useEffect(() => () => cancelAnimationFrame(pendingFitRef.current), []);
 
     useEffect(() => {
         const timeline = timelineRef.current;
-        if (timeline) {
+        if (timeline && markersSettled) {
             syncMarkers(timeline, markers, appliedMarkersRef.current);
         }
-    }, [markers]);
+    }, [markers, markersSettled]);
 
     const currentTime = props.currentTime?.value;
     useEffect(() => {
@@ -297,11 +351,15 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
             return;
         }
         lastCommandRef.current = command;
-        runCommand(timeline, command, animation());
+        try {
+            runCommand(timeline, command, animation(), fitToItems);
+        } catch (error) {
+            console.warn(`VisTimeline: command '${command}' failed.`, error);
+        }
         if (!attribute.readOnly) {
             attribute.setValue("");
         }
-    }, [command, animation]);
+    }, [command, animation, fitToItems]);
 
     // A template is filled by React one microtask after vis-timeline asked for it, so the timeline
     // has to measure the items again once the widgets inside them have actually rendered.

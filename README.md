@@ -90,6 +90,14 @@ into the drop zone that appears. They are rendered per row with the row's object
 data views, images, progress bars and buttons all work. Plain HTML in an attribute works too, but
 only when **Disable XSS protection** is on - and only for content you fully control.
 
+### Fitting the window
+
+**Fit to items** decides when the window is moved to contain all items: never, on first load
+(default) or on every data change. The fit waits for a layout pass, because vis-timeline derives the
+window from the *rendered* width of the items. When some of those items sit in a collapsed nested
+group vis-timeline cannot measure them and refuses to fit at all, so the widget falls back to the
+plain date range of the data plus a small margin.
+
 ### Extra options
 
 Anything not exposed as a property can be passed as JSON through **Advanced → Extra options (JSON)**.

@@ -6,14 +6,19 @@ import { splitIds, toDate } from "./values";
  * (fit, focus, zoom, move, setWindow) is reachable by writing a command into a string attribute.
  * The widget clears the attribute again once the command has run.
  */
-export function runCommand(timeline: Timeline, raw: string, animation: TimelineAnimationOptions): boolean {
+export function runCommand(
+    timeline: Timeline,
+    raw: string,
+    animation: TimelineAnimationOptions,
+    fit: (animation: TimelineAnimationOptions) => void
+): boolean {
     const separator = raw.indexOf(":");
     const name = (separator === -1 ? raw : raw.slice(0, separator)).trim().toLowerCase();
     const argument = separator === -1 ? "" : raw.slice(separator + 1).trim();
 
     switch (name) {
         case "fit":
-            timeline.fit(animation);
+            fit(animation);
             return true;
         case "redraw":
             timeline.redraw();

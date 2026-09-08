@@ -56,6 +56,7 @@ export interface HiddenDate {
 const ITEM_TYPES = ["box", "point", "range", "background"];
 const ALIGNMENTS = ["auto", "center", "left", "right"];
 const REPEATS = ["daily", "weekly", "monthly", "yearly"];
+const HALF_DAY = 12 * 60 * 60 * 1000;
 
 /** Maps the items data source onto vis-timeline items, and keeps a lookup from vis id back to the
  *  Mendix object so templates and events can resolve the row they belong to. */
@@ -220,6 +221,32 @@ export function buildHiddenDates(props: VisTimelineContainerProps): HiddenDate[]
         hidden.push({ start, end, repeat });
     }
     return hidden;
+}
+
+/**
+ * The span covered by the items, padded a little so the outermost labels are not clipped.
+ *
+ * vis-timeline has `fit()` for this, but it insists on measuring the rendered width of every item
+ * and throws "Cannot redraw item: no parent attached" for items that sit in a collapsed nested
+ * group. This is the fallback for that case.
+ */
+export function itemsRange(items: VisItem[]): { start: Date; end: Date } | undefined {
+    let min = Number.POSITIVE_INFINITY;
+    let max = Number.NEGATIVE_INFINITY;
+
+    for (const item of items) {
+        const start = item.start.getTime();
+        const end = item.end ? item.end.getTime() : start;
+        min = Math.min(min, start);
+        max = Math.max(max, end);
+    }
+    if (min === Number.POSITIVE_INFINITY) {
+        return undefined;
+    }
+
+    const span = max - min;
+    const padding = span > 0 ? span * 0.05 : HALF_DAY;
+    return { start: new Date(min - padding), end: new Date(max + padding) };
 }
 
 /** Stable string used to detect which rows really changed, so untouched rows are never handed back
