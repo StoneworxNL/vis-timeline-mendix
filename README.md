@@ -185,6 +185,12 @@ change, and pages built against the old widget need a look:
     - the bundle will be included in a `dist` folder in the root directory of the project;
     - the bundle will be included in the `deployment` and `widgets` folder of the Mendix test project.
 
+Run `npm test` for the unit tests. They cover the layer between Mendix and vis-timeline - the data source mapping, the
+options, the data set diff, the marker sync and the commands - by feeding the pure functions stand-ins for the Mendix
+client values from `src/utils/testUtils.ts`. That is where the bugs live: an id read from the wrong place, a field that
+is not cleared, an action that fires when it should not. Anything that needs a real timeline is not covered, so a change
+to the React component still wants a look in a running app.
+
 Source layout:
 
 -   `src/VisTimeline.xml` - the property surface; `typings/VisTimelineProps.d.ts` is generated from it.

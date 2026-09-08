@@ -11,8 +11,11 @@
 >
     <name>Vis Timeline</name>
     <description>Vis Timeline Mendix Pluggable Widget based on https://github.com/visjs/vis-timeline.</description>
+    <studioProCategory>Charts</studioProCategory>
     <helpUrl>https://github.com/StoneworxNL/vis-timeline-mendix/blob/main/README.md</helpUrl>
-    <icon />
+    <icon>
+        iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAARUlEQVR42mNgGAXEAjWvp/9JwWRZMH3DD6LwqAW0s4CmkTykkjDJPiQlfsiKo1ELBj6Sh2c6JyuY1LyeLqCm2DC0YEgCAMY59MQePsk8AAAAAElFTkSuQmCC
+    </icon>
     <properties>
         <propertyGroup caption="Items">
             <propertyGroup caption="Data source">

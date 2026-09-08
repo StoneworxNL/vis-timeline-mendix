@@ -14,16 +14,8 @@ import {
 import "vis-timeline/styles/vis-timeline-graph2d.min.css";
 
 import { VisTimelineContainerProps } from "../../typings/VisTimelineProps";
-import {
-    buildGroups,
-    buildItems,
-    buildMarkers,
-    itemsRange,
-    signature,
-    VisGroup,
-    VisItem,
-    VisMarker
-} from "../utils/data";
+import { buildGroups, buildItems, buildMarkers, itemsRange, VisGroup, VisItem, VisMarker } from "../utils/data";
+import { syncDataSet, syncMarkers } from "../utils/sync";
 import { buildStaticOptions } from "../utils/options";
 import { runCommand } from "../utils/commands";
 import { defaultSnap, visMoment } from "../utils/vis";
@@ -201,11 +193,18 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         if (!container) {
             return;
         }
-        const timeline = new Timeline(
-            container,
-            itemsDataSetRef.current as unknown as DataItemCollectionType,
-            mergeOptions(staticOptionsRef.current, functionOptions)
-        );
+        let timeline: Timeline;
+        try {
+            timeline = new Timeline(
+                container,
+                itemsDataSetRef.current as unknown as DataItemCollectionType,
+                mergeOptions(staticOptionsRef.current, functionOptions)
+            );
+        } catch (error) {
+            // Almost always a bad value in "Extra options (JSON)"; without this the whole page dies.
+            console.error("VisTimeline: the timeline could not be created, check its options.", error);
+            return;
+        }
         timelineRef.current = timeline;
         registerEvents(timeline, propsRef, appliedSelectionRef);
 
@@ -228,7 +227,7 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         // The timeline was constructed with these options already; pushing them again would only
         // cost an extra redraw before the widget has even been laid out.
         if (!isFirstRun) {
-            timelineRef.current?.setOptions(mergeOptions(staticOptionsRef.current, functionOptions));
+            applyOptions(timelineRef.current, mergeOptions(staticOptionsRef.current, functionOptions));
         }
         // staticOptionsRef always holds the newest options; optionsSignature says when they changed.
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -427,78 +426,13 @@ function renderTemplate(kind: TemplateKind, object: ObjectItem, props: VisTimeli
     }
 }
 
-/**
- * Pushes only the rows that actually changed into a vis-timeline data set and removes the ones that
- * disappeared from the Mendix data source. Returns the removed ids.
- */
-function syncDataSet<T extends { id: VisId }>(
-    dataSet: DataSet<T, "id">,
-    next: T[],
-    signatures: Map<VisId, string>
-): VisId[] {
-    const changed: T[] = [];
-    const seen = new Set<VisId>();
-
-    for (const row of next) {
-        seen.add(row.id);
-        const rowSignature = signature(row);
-        if (signatures.get(row.id) !== rowSignature) {
-            signatures.set(row.id, rowSignature);
-            changed.push(row);
-        }
-    }
-
-    const removed: VisId[] = [];
-    signatures.forEach((_, id) => {
-        if (!seen.has(id)) {
-            removed.push(id);
-        }
-    });
-    for (const id of removed) {
-        signatures.delete(id);
-    }
-
-    if (removed.length > 0) {
-        dataSet.remove(removed);
-    }
-    if (changed.length > 0) {
-        // The generic row type is wider than the DeepPartial shape the declarations ask for.
-        (dataSet as DataSet<any, "id">).update(changed);
-    }
-    return removed;
-}
-
-function syncMarkers(timeline: Timeline, next: VisMarker[], applied: Map<VisId, VisMarker>): void {
-    const seen = new Set<VisId>();
-
-    for (const marker of next) {
-        seen.add(marker.id);
-        const current = applied.get(marker.id);
-        if (!current) {
-            try {
-                timeline.addCustomTime(marker.time, marker.id);
-            } catch (error) {
-                console.warn(`VisTimeline: could not add marker '${marker.id}'.`, error);
-                continue;
-            }
-        } else if (current.time.getTime() !== marker.time.getTime()) {
-            timeline.setCustomTime(marker.time, marker.id);
-        }
-        if (!current || current.title !== marker.title) {
-            timeline.setCustomTimeTitle(marker.title ?? "", marker.id);
-        }
-        applied.set(marker.id, marker);
-    }
-
-    for (const id of Array.from(applied.keys())) {
-        if (!seen.has(id)) {
-            applied.delete(id);
-            try {
-                timeline.removeCustomTime(id);
-            } catch (error) {
-                console.warn(`VisTimeline: could not remove marker '${id}'.`, error);
-            }
-        }
+/** vis-timeline rejects an option it does not understand by throwing, and these options can come
+ *  from a JSON expression a modeller typed, so a mistake there must not take the page down. */
+function applyOptions(timeline: Timeline | null, options: TimelineOptions): void {
+    try {
+        timeline?.setOptions(options);
+    } catch (error) {
+        console.error("VisTimeline: the timeline rejected these options, check 'Extra options (JSON)'.", error);
     }
 }
 
