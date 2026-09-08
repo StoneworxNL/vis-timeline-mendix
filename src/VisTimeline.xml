@@ -812,12 +812,12 @@
                     <description>
                         Smallest visible interval in milliseconds, for example 3600000 for one hour.
                     </description>
-                    <returnType type="Long" />
+                    <returnType type="Integer" />
                 </property>
                 <property key="zoomMax" type="expression" required="false">
                     <caption>Maximum zoom interval</caption>
                     <description>Largest visible interval in milliseconds.</description>
-                    <returnType type="Long" />
+                    <returnType type="Integer" />
                 </property>
                 <property key="preferZoom" type="boolean" defaultValue="false">
                     <caption>Prefer zoom</caption>
