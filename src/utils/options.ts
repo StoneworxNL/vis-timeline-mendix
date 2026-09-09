@@ -39,7 +39,9 @@ export function buildStaticOptions(props: VisTimelineContainerProps): TimelineOp
         },
         maxMinorChars: props.maxMinorChars,
         moveable: props.moveable,
-        multiselect: props.multiselect,
+        // Picking Multi on the selection property is a clear enough statement of intent that the
+        // timeline should let the user make one.
+        multiselect: props.multiselect || props.itemSelection?.type === "Multi",
         multiselectPerGroup: props.multiselectPerGroup,
         orientation: { axis: props.orientationAxis, item: props.orientationItem },
         preferZoom: props.preferZoom,

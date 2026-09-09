@@ -61,6 +61,14 @@ describe("buildStaticOptions", () => {
         expect(options.groupEditable).toMatchObject({ order: true, add: false });
     });
 
+    it("switches multi select on when the selection property is set to Multi", () => {
+        expect(buildStaticOptions(containerProps()).multiselect).toBe(false);
+        expect(buildStaticOptions(containerProps({ itemSelection: { type: "Multi" } } as any)).multiselect).toBe(true);
+        expect(buildStaticOptions(containerProps({ itemSelection: { type: "Single" } } as any)).multiselect).toBe(
+            false
+        );
+    });
+
     it("accepts both forms of the data attributes option", () => {
         expect(buildStaticOptions(containerProps({ dataAttributes: dynamic("all") } as any)).dataAttributes).toBe(
             "all"

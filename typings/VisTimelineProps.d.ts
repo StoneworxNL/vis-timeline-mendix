@@ -4,7 +4,7 @@
  * @author Mendix Widgets Framework Team
  */
 import { ComponentType, CSSProperties, ReactNode } from "react";
-import { ActionValue, DynamicValue, EditableValue, ListValue, Option, ListAttributeValue, ListExpressionValue, ListReferenceSetValue, ListWidgetValue } from "mendix";
+import { ActionValue, DynamicValue, EditableValue, ListValue, Option, ListActionValue, ListAttributeValue, ListExpressionValue, ListReferenceSetValue, ListWidgetValue, SelectionSingleValue, SelectionMultiValue } from "mendix";
 import { Big } from "big.js";
 
 export type ItemContentTypeEnum = "attribute" | "custom";
@@ -152,6 +152,7 @@ export interface VisTimelineContainerProps {
     sequentialSelection: boolean;
     longSelectPressTime: number;
     selectedItemIds?: EditableValue<string>;
+    itemSelection?: SelectionSingleValue | SelectionMultiValue;
     focusOnSelection: boolean;
     moveable: boolean;
     zoomable: boolean;
@@ -193,6 +194,12 @@ export interface VisTimelineContainerProps {
     itemOverAction?: ActionValue<{ hoveredItemID: Option<string> }>;
     itemOutAction?: ActionValue<{ unhoveredItemID: Option<string> }>;
     dropAction?: ActionValue<{ droppedData: Option<string>; droppedTime: Option<Date>; droppedGroupID: Option<string> }>;
+    itemClickAction?: ListActionValue;
+    itemDoubleClickAction?: ListActionValue;
+    itemContextMenuAction?: ListActionValue;
+    itemUpdateAction?: ListActionValue;
+    itemMoveAction?: ListActionValue<{ newStart: Option<Date>; newEnd: Option<Date>; newGroupID: Option<string> }>;
+    itemRemoveAction?: ListActionValue;
     selectAction?: ActionValue<{ selectedItemIDs: Option<string> }>;
     rangeChangedAction?: ActionValue<{ rangeStart: Option<Date>; rangeEnd: Option<Date>; rangeByUser: Option<boolean> }>;
     onInitialDrawCompleteAction?: ActionValue;
@@ -329,6 +336,7 @@ export interface VisTimelinePreviewProps {
     sequentialSelection: boolean;
     longSelectPressTime: number | null;
     selectedItemIds: string;
+    itemSelection: "None" | "Single" | "Multi";
     focusOnSelection: boolean;
     moveable: boolean;
     zoomable: boolean;
@@ -370,6 +378,12 @@ export interface VisTimelinePreviewProps {
     itemOverAction: {} | null;
     itemOutAction: {} | null;
     dropAction: {} | null;
+    itemClickAction: {} | null;
+    itemDoubleClickAction: {} | null;
+    itemContextMenuAction: {} | null;
+    itemUpdateAction: {} | null;
+    itemMoveAction: {} | null;
+    itemRemoveAction: {} | null;
     selectAction: {} | null;
     rangeChangedAction: {} | null;
     onInitialDrawCompleteAction: {} | null;

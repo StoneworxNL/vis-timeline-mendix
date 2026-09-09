@@ -111,6 +111,10 @@ export function getProperties(values: VisTimelinePreviewProps, defaultProperties
     if (!values.selectable) {
         hidden.push("multiselect", "multiselectPerGroup", "sequentialSelection", "focusOnSelection");
     }
+    // Multi selection already implies it, so the switch would be a lie.
+    if (values.itemSelection === "Multi") {
+        hidden.push("multiselect");
+    }
     if (!values.animateChanges) {
         hidden.push("animationDuration", "animationEasing");
     }
@@ -214,6 +218,22 @@ export function check(values: VisTimelinePreviewProps): Problem[] {
             severity: "warning",
             message:
                 "XSS protection is disabled, so item and group content is rendered as raw HTML. Only do this for content you fully control."
+        });
+    }
+    const hasSelection = values.itemSelection !== "None";
+    if (hasSelection && values.selectedItemIds) {
+        problems.push({
+            property: "selectedItemIds",
+            severity: "warning",
+            message:
+                "Both Selection and Selected item IDs are bound. Selection decides what is shown as selected; the attribute is only written to."
+        });
+    }
+    if (hasSelection && !values.selectable) {
+        problems.push({
+            property: "selectable",
+            severity: "warning",
+            message: "Selection is bound but Selectable is off, so the user cannot change the selection."
         });
     }
     if (values.selectedItemIds && !values.selectable) {

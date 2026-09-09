@@ -1,8 +1,7 @@
 import { ReactElement, ReactNode, useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { createPortal } from "react-dom";
 import classNames from "classnames";
-import { Big } from "big.js";
-import { ActionValue, ObjectItem } from "mendix";
+import { ObjectItem } from "mendix";
 import {
     DataGroupCollectionType,
     DataItemCollectionType,
@@ -16,6 +15,7 @@ import "vis-timeline/styles/vis-timeline-graph2d.min.css";
 import { VisTimelineContainerProps } from "../../typings/VisTimelineProps";
 import { buildGroups, buildItems, buildMarkers, itemsRange, VisGroup, VisItem, VisMarker } from "../utils/data";
 import { syncDataSet, syncMarkers } from "../utils/sync";
+import { fireAction, fireItemAction, idToString, readSelection, toBig, writeSelection } from "../utils/actions";
 import { buildStaticOptions } from "../utils/options";
 import { runCommand } from "../utils/commands";
 import { defaultSnap, visMoment } from "../utils/vis";
@@ -35,6 +35,9 @@ interface ObjectLookup {
 }
 
 type PropsRef = { current: VisTimelineContainerProps };
+
+/** Looks up the Mendix object behind a vis item id, so an action can be handed the object itself. */
+type ItemResolver = (id: VisId | undefined) => ObjectItem | undefined;
 
 const MS_PER_MINUTE = 60000;
 
@@ -145,6 +148,10 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         [schedulePortalFlush]
     );
 
+    const resolveItem = useCallback((id: VisId | undefined): ObjectItem | undefined => {
+        return id === undefined ? undefined : objectsRef.current.items.get(id);
+    }, []);
+
     const animation = useCallback(
         (): TimelineAnimationOptions =>
             propsRef.current.animateChanges
@@ -184,7 +191,10 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         }
     }, []);
 
-    const functionOptions = useMemo(() => buildFunctionOptions(propsRef, templateContainer), [templateContainer]);
+    const functionOptions = useMemo(
+        () => buildFunctionOptions(propsRef, templateContainer, resolveItem),
+        [templateContainer, resolveItem]
+    );
 
     // The timeline is created once. Options, data, markers, window and selection are pushed in by
     // the effects below, so nothing forces a rebuild of the whole widget.
@@ -206,7 +216,7 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
             return;
         }
         timelineRef.current = timeline;
-        registerEvents(timeline, propsRef, appliedSelectionRef);
+        registerEvents(timeline, propsRef, appliedSelectionRef, resolveItem);
 
         // Custom time bars live on the timeline instance rather than in a data set, so they have to
         // be re-applied against a clean slate when the timeline is recreated.
@@ -219,7 +229,7 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
             appliedMarkers.clear();
             timeline.destroy();
         };
-    }, [functionOptions]);
+    }, [functionOptions, resolveItem]);
 
     useEffect(() => {
         const isFirstRun = appliedOptionsRef.current === undefined;
@@ -318,16 +328,36 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         );
     }, [windowStart, windowEnd, animation]);
 
-    const selectedItemIds = props.selectedItemIds?.value;
-    const selectionStatus = props.selectedItemIds?.status;
+    // The selection can be driven either by the Mendix selection property, which deals in objects,
+    // or by the comma separated attribute that came first. The selection property wins when both
+    // are configured, because it is the one the rest of the page can see.
+    const selectionFromMendix = useMemo<VisId[] | undefined>(() => {
+        const selection = props.itemSelection;
+        if (selection) {
+            const byObjectId = new Map<string, VisId>();
+            itemObjects.forEach((object, visId) => byObjectId.set(object.id, visId));
+            return readSelection(selection)
+                .map(object => byObjectId.get(object.id))
+                .filter(isVisId);
+        }
+        if (props.selectedItemIds?.status === "available") {
+            return splitIds(props.selectedItemIds.value);
+        }
+        return undefined;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [props.itemSelection, props.selectedItemIds, itemObjects]);
+
+    const selectionRef = useRef(selectionFromMendix);
+    selectionRef.current = selectionFromMendix;
+    // Only a real change of the wanted selection should reach the timeline; the props objects
+    // around it are rebuilt on every render.
+    const selectionKey = selectionFromMendix === undefined ? undefined : selectionFromMendix.join("\u0000");
     const focusOnSelection = props.focusOnSelection;
+
     useEffect(() => {
         const timeline = timelineRef.current;
-        if (!timeline || selectionStatus !== "available") {
-            return;
-        }
-        const wanted = splitIds(selectedItemIds);
-        if (sameIds(sorted(wanted), sorted(appliedSelectionRef.current))) {
+        const wanted = selectionRef.current;
+        if (!timeline || wanted === undefined || sameIds(sorted(wanted), sorted(appliedSelectionRef.current))) {
             return;
         }
         appliedSelectionRef.current = wanted;
@@ -335,7 +365,7 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         if (focusOnSelection && wanted.length > 0) {
             timeline.focus(wanted, animation());
         }
-    }, [selectedItemIds, selectionStatus, focusOnSelection, animation]);
+    }, [selectionKey, focusOnSelection, animation]);
 
     const command = props.commandAttribute?.value;
     useEffect(() => {
@@ -450,7 +480,8 @@ function mergeOptions(staticOptions: TimelineOptions, functionOptions: TimelineO
  */
 function buildFunctionOptions(
     propsRef: PropsRef,
-    templateContainer: (kind: TemplateKind, objectId: VisId) => HTMLElement
+    templateContainer: (kind: TemplateKind, objectId: VisId) => HTMLElement,
+    resolveItem: ItemResolver
 ): TimelineOptions {
     const options: TimelineOptions = {
         template: (item?: any) =>
@@ -501,6 +532,7 @@ function buildFunctionOptions(
                 data: JSON.stringify(item),
                 updatedItemID: idToString(item?.id)
             });
+            fireItemAction(propsRef.current.itemUpdateAction, resolveItem(idToString(item?.id)));
             callback(null);
         },
         onMove: (item: any, callback: (item: any) => void) => {
@@ -510,6 +542,11 @@ function buildFunctionOptions(
                 movedStart: toDate(item?.start),
                 movedEnd: toDate(item?.end),
                 movedGroupID: idToString(item?.group)
+            });
+            fireItemAction(props.itemMoveAction, resolveItem(idToString(item?.id)), {
+                newStart: toDate(item?.start),
+                newEnd: toDate(item?.end),
+                newGroupID: idToString(item?.group)
             });
             callback(props.moveMode === "moveAndCallAction" ? item : null);
         },
@@ -528,6 +565,7 @@ function buildFunctionOptions(
                 data: JSON.stringify(item),
                 removedItemID: idToString(item?.id)
             });
+            fireItemAction(props.itemRemoveAction, resolveItem(idToString(item?.id)));
             callback(props.removeMode === "removeAndCallAction" ? item : null);
         },
         onAddGroup: (group: any, callback: (group: any) => void) => {
@@ -573,7 +611,12 @@ function buildFunctionOptions(
     return options;
 }
 
-function registerEvents(timeline: Timeline, propsRef: PropsRef, appliedSelectionRef: { current: VisId[] }): void {
+function registerEvents(
+    timeline: Timeline,
+    propsRef: PropsRef,
+    appliedSelectionRef: { current: VisId[] },
+    resolveItem: ItemResolver
+): void {
     // Editable items emit a second, reduced `click` and `doubleClick` payload that has no `what`
     // key. Ignoring those is what keeps a microflow from running twice on a single click.
     const isPrimary = (properties: any): boolean => properties != null && "what" in properties;
@@ -586,7 +629,10 @@ function registerEvents(timeline: Timeline, propsRef: PropsRef, appliedSelection
 
     timeline.on("click", properties => {
         const props = propsRef.current;
-        if (isPrimary(properties) && inScope(props.clickScope, properties)) {
+        if (!isPrimary(properties)) {
+            return;
+        }
+        if (inScope(props.clickScope, properties)) {
             fireAction(props.clickAction, {
                 clickedItemID: idToString(properties.item),
                 clickedGroupID: idToString(properties.group),
@@ -594,11 +640,15 @@ function registerEvents(timeline: Timeline, propsRef: PropsRef, appliedSelection
                 clickedWhat: properties.what ?? undefined
             });
         }
+        fireItemAction(props.itemClickAction, resolveItem(idToString(properties.item)));
     });
 
     timeline.on("doubleClick", properties => {
         const props = propsRef.current;
-        if (isPrimary(properties) && inScope(props.doubleClickScope, properties)) {
+        if (!isPrimary(properties)) {
+            return;
+        }
+        if (inScope(props.doubleClickScope, properties)) {
             fireAction(props.doubleClickAction, {
                 doubleClickedItemID: idToString(properties.item),
                 doubleClickedGroupID: idToString(properties.group),
@@ -606,21 +656,28 @@ function registerEvents(timeline: Timeline, propsRef: PropsRef, appliedSelection
                 doubleClickedWhat: properties.what ?? undefined
             });
         }
+        fireItemAction(props.itemDoubleClickAction, resolveItem(idToString(properties.item)));
     });
 
     timeline.on("contextmenu", properties => {
         const props = propsRef.current;
-        if (!props.contextMenuAction || !inScope(props.contextMenuScope, properties)) {
+        const object = resolveItem(idToString(properties?.item));
+        const widgetLevel = !!props.contextMenuAction && inScope(props.contextMenuScope, properties);
+        const itemLevel = !!props.itemContextMenuAction && !!object;
+        if (!widgetLevel && !itemLevel) {
             return;
         }
         // Only take the browser menu away where the widget actually answers the right click.
         properties?.event?.preventDefault?.();
-        fireAction(props.contextMenuAction, {
-            contextItemID: idToString(properties.item),
-            contextGroupID: idToString(properties.group),
-            contextTime: toDate(properties.time),
-            contextWhat: properties.what ?? undefined
-        });
+        if (widgetLevel) {
+            fireAction(props.contextMenuAction, {
+                contextItemID: idToString(properties.item),
+                contextGroupID: idToString(properties.group),
+                contextTime: toDate(properties.time),
+                contextWhat: properties.what ?? undefined
+            });
+        }
+        fireItemAction(props.itemContextMenuAction, object);
     });
 
     timeline.on("itemover", properties =>
@@ -657,6 +714,7 @@ function registerEvents(timeline: Timeline, propsRef: PropsRef, appliedSelection
         if (attribute && attribute.status === "available" && !attribute.readOnly && attribute.value !== joined) {
             attribute.setValue(joined);
         }
+        writeSelection(props.itemSelection, ids.map(resolveItem).filter(isObjectItem));
         fireAction(props.selectAction, { selectedItemIDs: joined });
     });
 
@@ -682,24 +740,10 @@ function registerEvents(timeline: Timeline, propsRef: PropsRef, appliedSelection
     );
 }
 
-function fireAction(action: ActionValue<any> | undefined, args?: Record<string, unknown>): void {
-    if (!action || !action.canExecute || action.isExecuting) {
-        return;
-    }
-    (action.execute as (a?: Record<string, unknown>) => void)(args);
+function isObjectItem(object: ObjectItem | undefined): object is ObjectItem {
+    return object !== undefined;
 }
 
-function idToString(value: unknown): string | undefined {
-    return value === null || value === undefined ? undefined : String(value);
-}
-
-function toBig(value: unknown): Big | undefined {
-    if (typeof value !== "number" && typeof value !== "string") {
-        return undefined;
-    }
-    try {
-        return new Big(value);
-    } catch {
-        return undefined;
-    }
+function isVisId(id: VisId | undefined): id is VisId {
+    return id !== undefined;
 }

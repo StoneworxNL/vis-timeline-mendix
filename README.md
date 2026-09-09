@@ -18,12 +18,13 @@ without writing JavaScript.
     CSS class.
 -   **Time axis**: visible window, min/max limits, fixed scale and step, custom moment.js label formats, week scale,
     locale and locale label overrides, a fixed time zone offset, hidden periods and rolling mode.
--   **Interaction**: selection (single, multi, per group, sequential) with a two way bound attribute, move and zoom
-    limits, zoom key, horizontal and vertical scrolling, click to use and clustering.
+-   **Interaction**: selection (single, multi, per group, sequential) through the Mendix selection property or a two way
+    bound attribute, move and zoom limits, zoom key, horizontal and vertical scrolling, click to use and clustering.
 -   **Editing**: add, remove, drag in time, drag between groups, group add/remove/reorder, snapping to nice values or to
     a fixed number of minutes, and manipulation callbacks that hand the change to a microflow.
 -   **Events**: click, double click, context menu, item hover in/out, external drop, selection change, window change,
-    initial draw, marker move, and the full set of item and group manipulation events.
+    initial draw, marker move, and the full set of item and group manipulation events - at widget level with the ids, or
+    bound to the items data source so the microflow receives the object.
 -   **Escape hatches**: a `Command` attribute for the imperative API, extra options as JSON, data attributes, and an XSS
     protection switch for HTML content.
 
@@ -58,8 +59,27 @@ the attribute again, so the same command can be used twice in a row.
 | `moveTo:<ISO date>`                | Centre on a moment in time                        |
 | `setWindow:<ISO start>\|<ISO end>` | Set both bounds at once                           |
 
-**Selected item IDs** is two way: the widget writes the comma separated selection into it, and writing to it from a
-microflow changes the selection.
+### Selection
+
+There are two ways in, and they can be used together:
+
+-   **Selection** (Interaction → Selection) is the Mendix selection property, bound to the items data source. It deals
+    in objects, so a microflow or another widget on the page gets the item objects themselves. Choosing _Multi_ also
+    switches multi select on.
+-   **Selected item IDs** is a two way bound attribute holding the comma separated ids. Writing to it from a microflow
+    changes the selection.
+
+When both are bound, Selection decides what is shown as selected and the attribute is kept up to date alongside it.
+
+### Actions that receive the object
+
+The actions under **Events → Item** are bound to the items data source, so the microflow or page they call gets the item
+object as its parameter - no retrieve from an id needed. **On item moved** also receives the new start, end and group,
+so the drag can be written straight onto the object.
+
+Their counterparts under **Events → Mouse** and **Events → Item manipulation** stay id based and still fire, which is
+what a page needs when it reacts to a click on the background or the axis rather than on an item. Binding both means
+both run.
 
 ### Editing behaviour
 
@@ -156,6 +176,7 @@ change, and pages built against the old widget need a look:
 | Animate window, navigation menu                              | Window start/end, Command, Animate window changes             |
 | Click to use, Limit move and zoom                            | Click to use, Minimum/Maximum date, zoom interval             |
 | Select items, Sequential selection, Item selectability       | Selection group, Selectable per item                          |
+| Selection driven by another widget on the page               | Selection property bound to the items data source             |
 | Event listeners                                              | Events tab                                                    |
 | Background areas (+ with groups), Point items                | Type attribute, Default item type                             |
 | Dynamic content, HTML data, Templates, React components      | Custom content widgets                                        |
@@ -197,6 +218,9 @@ Source layout:
 -   `src/components/VisTimelineComponent.tsx` - the React wrapper that owns the vis-timeline instance.
 -   `src/utils/data.ts` - Mendix data sources to vis-timeline items, groups, markers and hidden dates.
 -   `src/utils/options.ts` - properties to vis-timeline options.
+-   `src/utils/sync.ts` - pushing only what changed into the vis-timeline data sets and markers.
+-   `src/utils/actions.ts` - running Mendix actions and mirroring the selection back.
 -   `src/utils/commands.ts` - the `Command` attribute.
 -   `src/utils/values.ts` - attribute reading, id normalisation and JSON helpers.
 -   `src/utils/vis.ts` - the two exports of the standalone build that its type declarations omit.
+-   `src/utils/testUtils.ts` - Mendix client value stand-ins for the tests.

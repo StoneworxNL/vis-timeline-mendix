@@ -779,6 +779,19 @@
                         <attributeType name="String" />
                     </attributeTypes>
                 </property>
+                <property key="itemSelection" type="selection" dataSource="VisItemsDataSource">
+                    <caption>Selection</caption>
+                    <description>
+                        Binds the selection to the item objects themselves, so a microflow or another widget on the
+                        page works with the objects rather than with a list of ids. Choosing Multi also switches
+                        multi select on.
+                    </description>
+                    <selectionTypes>
+                        <selectionType name="None" />
+                        <selectionType name="Single" />
+                        <selectionType name="Multi" />
+                    </selectionTypes>
+                </property>
                 <property key="focusOnSelection" type="boolean" defaultValue="false">
                     <caption>Focus on selection</caption>
                     <description>
@@ -1081,6 +1094,49 @@
                         <actionVariable key="droppedTime" type="DateTime" caption="Dropped time" />
                         <actionVariable key="droppedGroupID" type="String" caption="Dropped group ID" />
                     </actionVariables>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Item">
+                <property key="itemClickAction" type="action" dataSource="VisItemsDataSource" required="false">
+                    <caption>On item click</caption>
+                    <description>
+                        Triggered when an item is clicked. Receives the item object itself, so the microflow does not
+                        have to retrieve it from an id.
+                    </description>
+                </property>
+                <property key="itemDoubleClickAction" type="action" dataSource="VisItemsDataSource" required="false">
+                    <caption>On item double click</caption>
+                    <description>Triggered when an item is double clicked. Receives the item object.</description>
+                </property>
+                <property key="itemContextMenuAction" type="action" dataSource="VisItemsDataSource" required="false">
+                    <caption>On item context menu</caption>
+                    <description>
+                        Triggered on right click on an item. Receives the item object. The browser context menu is
+                        suppressed wherever this action fires.
+                    </description>
+                </property>
+                <property key="itemUpdateAction" type="action" dataSource="VisItemsDataSource" required="false">
+                    <caption>On item update</caption>
+                    <description>
+                        Triggered when an editable item is double clicked, so it can be edited on a page. Receives the
+                        item object.
+                    </description>
+                </property>
+                <property key="itemMoveAction" type="action" dataSource="VisItemsDataSource" required="false">
+                    <caption>On item moved</caption>
+                    <description>
+                        Triggered when an item has been dragged or resized. Receives the item object together with
+                        where it was dropped, so the new dates can be written straight onto it.
+                    </description>
+                    <actionVariables>
+                        <actionVariable key="newStart" type="DateTime" caption="New start" />
+                        <actionVariable key="newEnd" type="DateTime" caption="New end" />
+                        <actionVariable key="newGroupID" type="String" caption="New group ID" />
+                    </actionVariables>
+                </property>
+                <property key="itemRemoveAction" type="action" dataSource="VisItemsDataSource" required="false">
+                    <caption>On item removed</caption>
+                    <description>Triggered when the user deletes an item. Receives the item object.</description>
                 </property>
             </propertyGroup>
             <propertyGroup caption="Timeline">
