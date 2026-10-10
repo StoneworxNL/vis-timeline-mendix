@@ -147,12 +147,9 @@ The raw JSON is handed to **On drop** together with the time and group it was dr
 
 ## Upgrading from the first version
 
-The property keys of the first version are all still there, so existing pages keep their mappings. Four behaviours did
+The property keys of the first version are all still there, so existing pages keep their mappings. Three behaviours did
 change, and pages built against the old widget need a look:
 
--   **Editing is off by default.** The old widget hardcoded `editable: true`, so every timeline allowed dragging,
-    resizing, adding and deleting. The four **Editing → Items** properties now default to false, which is what
-    vis-timeline itself defaults to. Switch on the ones a page needs.
 -   **On update** used to fire whenever the data source changed, which also meant a microflow could trigger itself. It
     now fires only when the user double clicks an editable item.
 -   **On add**, **On update** and **On remove** pass the item as a JSON object in `data`. The old widget passed a JSON

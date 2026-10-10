@@ -888,22 +888,22 @@
         </propertyGroup>
         <propertyGroup caption="Editing">
             <propertyGroup caption="Items">
-                <property key="editableAdd" type="expression" defaultValue="false">
+                <property key="editableAdd" type="expression" defaultValue="true">
                     <caption>Allow add</caption>
                     <description>Allow creating items by double clicking an empty spot.</description>
                     <returnType type="Boolean" />
                 </property>
-                <property key="editableRemove" type="expression" defaultValue="false">
+                <property key="editableRemove" type="expression" defaultValue="true">
                     <caption>Allow remove</caption>
                     <description>Show a delete button on selected items.</description>
                     <returnType type="Boolean" />
                 </property>
-                <property key="editableUpdateTime" type="expression" defaultValue="false">
+                <property key="editableUpdateTime" type="expression" defaultValue="true">
                     <caption>Allow drag in time</caption>
                     <description>Allow dragging and resizing items horizontally.</description>
                     <returnType type="Boolean" />
                 </property>
-                <property key="editableUpdateGroup" type="expression" defaultValue="false">
+                <property key="editableUpdateGroup" type="expression" defaultValue="true">
                     <caption>Allow drag between groups</caption>
                     <description>Allow dragging items to another group.</description>
                     <returnType type="Boolean" />
@@ -924,17 +924,17 @@
                 </property>
             </propertyGroup>
             <propertyGroup caption="Groups">
-                <property key="groupEditableAdd" type="expression" defaultValue="false">
+                <property key="groupEditableAdd" type="expression" defaultValue="true">
                     <caption>Allow add group</caption>
                     <description>Allow dragging an item onto the group area to create a group.</description>
                     <returnType type="Boolean" />
                 </property>
-                <property key="groupEditableRemove" type="expression" defaultValue="false">
+                <property key="groupEditableRemove" type="expression" defaultValue="true">
                     <caption>Allow remove group</caption>
                     <description>Allow removing groups.</description>
                     <returnType type="Boolean" />
                 </property>
-                <property key="groupEditableOrder" type="expression" defaultValue="false">
+                <property key="groupEditableOrder" type="expression" defaultValue="true">
                     <caption>Allow reorder groups</caption>
                     <description>
                         Allow dragging groups to reorder them. Requires an Order value and Group order set to Order
