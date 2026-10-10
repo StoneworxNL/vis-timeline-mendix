@@ -13,8 +13,9 @@ import {
 import "vis-timeline/styles/vis-timeline-graph2d.min.css";
 
 import { VisTimelineContainerProps } from "../../typings/VisTimelineProps";
-import { buildGroups, buildItems, buildMarkers, itemsRange, VisGroup, VisItem, VisMarker } from "../utils/data";
-import { syncDataSet, syncMarkers } from "../utils/sync";
+import { buildGroups, buildItems, buildMarkers, VisGroup, VisItem, VisMarker } from "../utils/data";
+import { syncMarkers } from "../utils/sync";
+import { fitWithFallback, inScope, isSettled, syncWhenSettled } from "../utils/guards";
 import { fireAction, fireItemAction, idToString, readSelection, toBig, writeSelection } from "../utils/actions";
 import { buildStaticOptions } from "../utils/options";
 import { runCommand } from "../utils/commands";
@@ -85,9 +86,9 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
     // Mendix reports `loading` while it refreshes a data source, handing out an empty list in the
     // meantime. Applying that would clear the timeline and flash it back a moment later, so
     // whatever is on screen is kept until real data arrives.
-    const itemsSettled = props.VisItemsDataSource.status !== "loading";
-    const groupsSettled = props.VisGroupsDataSource?.status !== "loading";
-    const markersSettled = props.markersDataSource?.status !== "loading";
+    const itemsSettled = isSettled(props.VisItemsDataSource);
+    const groupsSettled = isSettled(props.VisGroupsDataSource);
+    const markersSettled = isSettled(props.markersDataSource);
 
     if (itemsSettled) {
         objectsRef.current.items = itemObjects;
@@ -165,30 +166,19 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         []
     );
 
-    // vis-timeline's own fit() measures the rendered width of every item and throws for items that
-    // sit in a collapsed nested group, which would leave the window stranded wherever it started.
-    // Its result is the nicer one, so it is tried first and the data range is the safety net.
     const fitToItems = useCallback((animationOptions: TimelineAnimationOptions) => {
         const timeline = timelineRef.current;
         if (!timeline) {
             return;
         }
-        try {
-            timeline.redraw();
-            timeline.fit(animationOptions);
-            return;
-        } catch (error) {
+        fitWithFallback(timeline, itemsRef.current, animationOptions, error => {
             // Expected whenever items live in a collapsed nested group, so it is only worth saying
-            // once - the fallback below still lands the window on the data.
+            // once - the fallback still lands the window on the data.
             if (!warnedAboutFitRef.current) {
                 warnedAboutFitRef.current = true;
                 console.warn("VisTimeline: vis-timeline could not measure the items, using the data range.", error);
             }
-        }
-        const range = itemsRange(itemsRef.current);
-        if (range) {
-            timeline.setWindow(range.start, range.end, animationOptions);
-        }
+        });
     }, []);
 
     const functionOptions = useMemo(
@@ -249,10 +239,15 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         if (!timeline) {
             return;
         }
-        if (!groupsSettled) {
+        const removed = syncWhenSettled(
+            propsRef.current.VisGroupsDataSource,
+            groupsDataSetRef.current,
+            groups,
+            groupSignaturesRef.current
+        );
+        if (!removed) {
             return;
         }
-        const removed = syncDataSet(groupsDataSetRef.current, groups, groupSignaturesRef.current);
         dropContainers(["group"], removed);
 
         const hasGroups = groups.length > 0;
@@ -273,10 +268,15 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         if (!timeline) {
             return;
         }
-        if (!itemsSettled) {
+        const removed = syncWhenSettled(
+            propsRef.current.VisItemsDataSource,
+            itemsDataSetRef.current,
+            items,
+            itemSignaturesRef.current
+        );
+        if (!removed) {
             return;
         }
-        const removed = syncDataSet(itemsDataSetRef.current, items, itemSignaturesRef.current);
         dropContainers(["item", "frame", "tooltip"], removed);
 
         const hasExplicitWindow = windowStart !== undefined && windowEnd !== undefined;
@@ -620,12 +620,6 @@ function registerEvents(
     // Editable items emit a second, reduced `click` and `doubleClick` payload that has no `what`
     // key. Ignoring those is what keeps a microflow from running twice on a single click.
     const isPrimary = (properties: any): boolean => properties != null && "what" in properties;
-
-    // Clicking the background, the time axis or a group label is still a click as far as
-    // vis-timeline is concerned. Reporting those to an action that expects an item id is what the
-    // scope settings guard against.
-    const inScope = (scope: "item" | "anywhere", properties: any): boolean =>
-        scope === "anywhere" || properties?.item != null;
 
     timeline.on("click", properties => {
         const props = propsRef.current;
