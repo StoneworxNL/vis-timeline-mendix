@@ -3,6 +3,32 @@ import { VisTimelineContainerProps } from "../../typings/VisTimelineProps";
 import { buildHiddenDates } from "./data";
 import { deepMerge, dynamicBoolean, dynamicNumber, dynamicText, parseJsonObject } from "./values";
 
+/** vis-timeline's own default label formats (TimeStep.FORMAT), kept here so they cannot be overwritten. */
+const DEFAULT_FORMAT = {
+    minorLabels: {
+        millisecond: "SSS",
+        second: "s",
+        minute: "HH:mm",
+        hour: "HH:mm",
+        weekday: "ddd D",
+        day: "D",
+        week: "w",
+        month: "MMM",
+        year: "YYYY"
+    },
+    majorLabels: {
+        millisecond: "HH:mm:ss",
+        second: "D MMMM HH:mm",
+        minute: "ddd D MMMM",
+        hour: "ddd D MMMM",
+        weekday: "MMMM YYYY",
+        day: "MMMM YYYY",
+        week: "MMMM YYYY",
+        month: "YYYY",
+        year: ""
+    }
+};
+
 /**
  * Everything vis-timeline can be told through plain data. Function valued options (templates,
  * snapping, manipulation callbacks) are registered once when the timeline is created, because they
@@ -115,9 +141,13 @@ export function buildStaticOptions(props: VisTimelineContainerProps): TimelineOp
 
     const minorLabels = parseJsonObject(dynamicText(props.formatMinorLabels), "Minor label formats");
     const majorLabels = parseJsonObject(dynamicText(props.formatMajorLabels), "Major label formats");
-    if (minorLabels || majorLabels) {
-        options.format = { ...(minorLabels && { minorLabels }), ...(majorLabels && { majorLabels }) };
-    }
+    // Always hand over a complete format. vis-timeline's time axis shallow copies its static default
+    // and then deep merges custom formats into it, which rewrites the shared default; without a full
+    // format here, a later timeline would keep the labels of a page visited earlier.
+    options.format = {
+        minorLabels: { ...DEFAULT_FORMAT.minorLabels, ...minorLabels },
+        majorLabels: { ...DEFAULT_FORMAT.majorLabels, ...majorLabels }
+    };
 
     const dataAttributes = dynamicText(props.dataAttributes);
     if (dataAttributes !== undefined) {

@@ -89,10 +89,20 @@ describe("buildStaticOptions", () => {
     it("parses the label formats and ignores a malformed one", () => {
         const warn = jest.spyOn(console, "warn").mockImplementation();
         const options = buildStaticOptions(
-            containerProps({ formatMinorLabels: dynamic('{"day":"D"}'), formatMajorLabels: dynamic("{oops") } as any)
+            containerProps({
+                formatMinorLabels: dynamic('{"day":"ddd D"}'),
+                formatMajorLabels: dynamic("{oops")
+            } as any)
         );
-        expect(options.format).toEqual({ minorLabels: { day: "D" } });
+        expect(options.format?.minorLabels).toMatchObject({ day: "ddd D", month: "MMM" });
+        expect(options.format?.majorLabels).toMatchObject({ day: "MMMM YYYY" });
         warn.mockRestore();
+    });
+
+    it("always passes the complete default formats, so earlier custom formats cannot leak in", () => {
+        const options = buildStaticOptions(containerProps({} as any));
+        expect(options.format?.minorLabels).toMatchObject({ day: "D", weekday: "ddd D" });
+        expect(options.format?.majorLabels).toMatchObject({ day: "MMMM YYYY" });
     });
 
     it("collects the hidden periods from their data source", () => {
