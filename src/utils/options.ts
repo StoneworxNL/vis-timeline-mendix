@@ -2,32 +2,7 @@ import { TimelineOptions } from "vis-timeline/standalone";
 import { VisTimelineContainerProps } from "../../typings/VisTimelineProps";
 import { buildHiddenDates } from "./data";
 import { deepMerge, dynamicBoolean, dynamicNumber, dynamicText, parseJsonObject } from "./values";
-
-/** vis-timeline's own default label formats (TimeStep.FORMAT), kept here so they cannot be overwritten. */
-const DEFAULT_FORMAT = {
-    minorLabels: {
-        millisecond: "SSS",
-        second: "s",
-        minute: "HH:mm",
-        hour: "HH:mm",
-        weekday: "ddd D",
-        day: "D",
-        week: "w",
-        month: "MMM",
-        year: "YYYY"
-    },
-    majorLabels: {
-        millisecond: "HH:mm:ss",
-        second: "D MMMM HH:mm",
-        minute: "ddd D MMMM",
-        hour: "ddd D MMMM",
-        weekday: "MMMM YYYY",
-        day: "MMMM YYYY",
-        week: "MMMM YYYY",
-        month: "YYYY",
-        year: ""
-    }
-};
+import { defaultLabelFormats, LabelFormats, resolveLocale, VisMoment } from "./vis";
 
 /**
  * Everything vis-timeline can be told through plain data. Function valued options (templates,
@@ -124,15 +99,15 @@ export function buildStaticOptions(props: VisTimelineContainerProps): TimelineOp
     assignIfDefined(options, "zoomMin", dynamicNumber(props.zoomMin));
     assignIfDefined(options, "zoomMax", dynamicNumber(props.zoomMax));
 
-    const locale = dynamicText(props.locale);
+    // The same resolved locale drives the axis labels (see the moment factory) and vis-timeline's
+    // own wording, so the two can never end up in different languages.
+    const locale = resolveLocale(dynamicText(props.locale));
     const currentLabel = dynamicText(props.localeCurrentLabel);
     const timeLabel = dynamicText(props.localeTimeLabel);
-    if (locale !== undefined) {
-        options.locale = locale;
-    }
+    options.locale = locale;
     if (currentLabel !== undefined || timeLabel !== undefined) {
         options.locales = {
-            [locale ?? "en"]: {
+            [locale]: {
                 ...(currentLabel !== undefined && { current: currentLabel }),
                 ...(timeLabel !== undefined && { time: timeLabel })
             }
@@ -141,13 +116,17 @@ export function buildStaticOptions(props: VisTimelineContainerProps): TimelineOp
 
     const minorLabels = parseJsonObject(dynamicText(props.formatMinorLabels), "Minor label formats");
     const majorLabels = parseJsonObject(dynamicText(props.formatMajorLabels), "Major label formats");
-    // Always hand over a complete format. vis-timeline's time axis shallow copies its static default
-    // and then deep merges custom formats into it, which rewrites the shared default; without a full
-    // format here, a later timeline would keep the labels of a page visited earlier.
-    options.format = {
-        minorLabels: { ...DEFAULT_FORMAT.minorLabels, ...minorLabels },
-        majorLabels: { ...DEFAULT_FORMAT.majorLabels, ...majorLabels }
-    };
+    if (defaultLabelFormats) {
+        // Hand over functions rather than objects. The time axis shallow copies vis-timeline's
+        // default formats and deep merges objects into them, which rewrites the defaults shared by
+        // every timeline on the page; a function is assigned instead, so each timeline keeps its own.
+        options.format = {
+            minorLabels: labelFormatter({ ...defaultLabelFormats.minorLabels, ...(minorLabels as LabelFormats) }),
+            majorLabels: labelFormatter({ ...defaultLabelFormats.majorLabels, ...(majorLabels as LabelFormats) })
+        } as unknown as TimelineOptions["format"];
+    } else if (minorLabels || majorLabels) {
+        options.format = { ...(minorLabels && { minorLabels }), ...(majorLabels && { majorLabels }) };
+    }
 
     const dataAttributes = dynamicText(props.dataAttributes);
     if (dataAttributes !== undefined) {
@@ -181,4 +160,12 @@ function assignIfDefined<K extends keyof TimelineOptions>(
     if (value !== undefined) {
         options[key] = value;
     }
+}
+
+/** Formats a label with the moment format configured for the scale the time axis is showing. */
+function labelFormatter(formats: LabelFormats): (date: VisMoment, scale: string) => string {
+    return (date, scale) => {
+        const format = formats[scale];
+        return format ? date.format(format) : "";
+    };
 }

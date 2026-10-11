@@ -1,6 +1,9 @@
 import { buildStaticOptions } from "../options";
 import { attribute, containerProps, dateAttribute, dynamic, listValue, Row } from "../testUtils";
 
+/** Stands in for a moment instance: formatting returns the format string itself. */
+const fakeMoment = { format: (format: string) => format };
+
 describe("buildStaticOptions", () => {
     it("starts from the same defaults as vis-timeline itself", () => {
         const options = buildStaticOptions(containerProps()) as any;
@@ -22,14 +25,14 @@ describe("buildStaticOptions", () => {
         expect(buildStaticOptions(containerProps({ zoomKey: "ctrlKey" } as any)).zoomKey).toBe("ctrlKey");
     });
 
-    it("leaves out the options that mean 'let vis-timeline decide'", () => {
+    it("leaves out the options that mean 'let vis-timeline decide', and defaults the locale to English", () => {
         const options = buildStaticOptions(containerProps());
         expect(options.type).toBeUndefined();
         expect(options.groupOrder).toBeUndefined();
         expect(options.timeAxis).toBeUndefined();
         expect(options.cluster).toBeUndefined();
         expect(options.height).toBeUndefined();
-        expect(options.locale).toBeUndefined();
+        expect(options.locale).toBe("en");
     });
 
     it("sets a fixed scale only when one was chosen", () => {
@@ -94,15 +97,30 @@ describe("buildStaticOptions", () => {
                 formatMajorLabels: dynamic("{oops")
             } as any)
         );
-        expect(options.format?.minorLabels).toMatchObject({ day: "ddd D", month: "MMM" });
-        expect(options.format?.majorLabels).toMatchObject({ day: "MMMM YYYY" });
+        const format = options.format as any;
+        expect(format.minorLabels(fakeMoment, "day")).toBe("ddd D");
+        expect(format.minorLabels(fakeMoment, "month")).toBe("MMM");
+        expect(format.majorLabels(fakeMoment, "day")).toBe("MMMM YYYY");
         warn.mockRestore();
     });
 
-    it("always passes the complete default formats, so earlier custom formats cannot leak in", () => {
-        const options = buildStaticOptions(containerProps({} as any));
-        expect(options.format?.minorLabels).toMatchObject({ day: "D", weekday: "ddd D" });
-        expect(options.format?.majorLabels).toMatchObject({ day: "MMMM YYYY" });
+    it("passes the label formats as functions, so timelines never share format objects", () => {
+        const first = buildStaticOptions(containerProps({ formatMinorLabels: dynamic('{"day":"ddd D"}') } as any));
+        const second = buildStaticOptions(containerProps());
+        expect(typeof first.format?.minorLabels).toBe("function");
+        expect((second.format as any).minorLabels(fakeMoment, "day")).toBe("D");
+        expect((second.format as any).majorLabels(fakeMoment, "year")).toBe("");
+    });
+
+    it("resolves the locale to one moment has loaded, falling back to English", () => {
+        const localeOf = (value?: string): string | undefined =>
+            buildStaticOptions(containerProps(value ? ({ locale: dynamic(value) } as any) : undefined)).locale;
+        expect(localeOf()).toBe("en");
+        expect(localeOf("nl")).toBe("nl");
+        expect(localeOf("NL")).toBe("nl");
+        expect(localeOf("de_DE")).toBe("de");
+        expect(localeOf("nl-BE")).toBe("nl");
+        expect(localeOf("englsh")).toBe("en");
     });
 
     it("collects the hidden periods from their data source", () => {
