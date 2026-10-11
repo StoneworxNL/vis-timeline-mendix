@@ -7,6 +7,7 @@ import * as VisTimelineModule from "vis-timeline/standalone";
  * properties, so they are picked up here through a single narrow cast.
  */
 interface VisMoment {
+    locale(locale: string): VisMoment;
     utcOffset(offset: string): VisMoment;
     toDate(): Date;
 }

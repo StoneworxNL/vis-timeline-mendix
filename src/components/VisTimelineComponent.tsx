@@ -603,7 +603,10 @@ function buildFunctionOptions(
     if (momentFactory) {
         options.moment = ((date?: unknown) => {
             const offset = propsRef.current.timeZoneOffset?.value;
-            const moment = momentFactory(date);
+            // The bundled moment loads every vis-timeline locale, which leaves its global locale on
+            // the last one registered (Ukrainian). Axis labels are formatted through this factory,
+            // so pin each instance to the configured locale, falling back to English.
+            const moment = momentFactory(date).locale(propsRef.current.locale?.value || "en");
             return offset ? moment.utcOffset(offset) : moment;
         }) as unknown as TimelineOptions["moment"];
     }
