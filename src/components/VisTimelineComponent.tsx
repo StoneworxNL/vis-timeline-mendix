@@ -19,8 +19,8 @@ import { fitWithFallback, inScope, isSettled, syncWhenSettled } from "../utils/g
 import { fireAction, fireItemAction, idToString, readSelection, toBig, writeSelection } from "../utils/actions";
 import { buildStaticOptions } from "../utils/options";
 import { runCommand } from "../utils/commands";
-import { defaultSnap, visMoment } from "../utils/vis";
-import { dynamicBoolean, sameIds, splitIds, toDate, VisId } from "../utils/values";
+import { defaultSnap, resolveLocale, visMoment } from "../utils/vis";
+import { dynamicBoolean, dynamicText, sameIds, splitIds, toDate, VisId } from "../utils/values";
 
 type TemplateKind = "item" | "frame" | "tooltip" | "group";
 
@@ -601,12 +601,20 @@ function buildFunctionOptions(
 
     const momentFactory = visMoment;
     if (momentFactory) {
+        // The bundled moment loads every vis-timeline locale, which leaves its global locale on the
+        // last one registered (Ukrainian). Axis labels are formatted through this factory, so pin
+        // each instance to the configured locale. vis-timeline calls the factory for every label
+        // and position, so the locale is only resolved again when the property changes.
+        let localeSource: string | undefined;
+        let locale = resolveLocale(undefined);
         options.moment = ((date?: unknown) => {
             const offset = propsRef.current.timeZoneOffset?.value;
-            // The bundled moment loads every vis-timeline locale, which leaves its global locale on
-            // the last one registered (Ukrainian). Axis labels are formatted through this factory,
-            // so pin each instance to the configured locale, falling back to English.
-            const moment = momentFactory(date).locale(propsRef.current.locale?.value || "en");
+            const source = dynamicText(propsRef.current.locale);
+            if (source !== localeSource) {
+                localeSource = source;
+                locale = resolveLocale(source);
+            }
+            const moment = momentFactory(date).locale(locale);
             return offset ? moment.utcOffset(offset) : moment;
         }) as unknown as TimelineOptions["moment"];
     }
