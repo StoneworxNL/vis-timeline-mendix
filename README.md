@@ -151,6 +151,12 @@ event.dataTransfer.setData("text", JSON.stringify({ content: "New task", target:
 The raw JSON is handed to **On drop** together with the time and group it was dropped on. When **Editable: add** is on,
 the drop also runs **On add**, whose **Content** variable carries the dropped item's content.
 
+### What is in view
+
+**On items in view changed** reports the ids of the items and of the groups inside the visible window, after moving,
+zooming, scrolling or a data change. Only an actual change runs the action, so a microflow that updates the page from it
+does not trigger itself again.
+
 ### Marker labels
 
 **Marker label** puts text on the bar itself, as vis-timeline's custom time markers do; **Marker tooltip** stays the

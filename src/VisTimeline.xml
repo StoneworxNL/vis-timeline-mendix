@@ -1177,6 +1177,17 @@
                         <actionVariable key="rangeByUser" type="Boolean" caption="Changed by user" />
                     </actionVariables>
                 </property>
+                <property key="visibleChangedAction" type="action" required="false">
+                    <caption>On items in view changed</caption>
+                    <description>
+                        Triggered when the items or groups inside the visible window change, after moving, zooming,
+                        scrolling or a data change.
+                    </description>
+                    <actionVariables>
+                        <actionVariable key="visibleItemIDs" type="String" caption="Item IDs in view" />
+                        <actionVariable key="visibleGroupIDs" type="String" caption="Group IDs in view" />
+                    </actionVariables>
+                </property>
                 <property key="onInitialDrawCompleteAction" type="action" required="false">
                     <caption>On initial draw complete</caption>
                     <description>Triggered once, when the timeline has been drawn for the first time.</description>

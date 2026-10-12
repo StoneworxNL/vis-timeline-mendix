@@ -58,6 +58,7 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
     const groupSignaturesRef = useRef(new Map<VisId, string>());
     const appliedMarkersRef = useRef(new Map<VisId, VisMarker>());
     const groupsAttachedRef = useRef(false);
+    const appliedSubgroupVisibilityRef = useRef<string | undefined>(undefined);
     const hasFittedRef = useRef(false);
     const appliedSelectionRef = useRef<VisId[]>([]);
     const lastCommandRef = useRef<string | undefined>(undefined);
@@ -70,18 +71,13 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
     const [portalVersion, refreshPortals] = useReducer((count: number) => count + 1, 0);
     const portalFlushScheduledRef = useRef(false);
 
-    const { items, objects: itemObjects } = useMemo(
-        () => buildItems(props),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [props.VisItemsDataSource, props.itemContentType, props.itemTooltipType, props.editableOverrideItems]
-    );
-    const { groups, objects: groupObjects } = useMemo(
-        () => buildGroups(props),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [props.VisGroupsDataSource, props.subgroupsDataSource, props.groupContentType]
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const markers = useMemo(() => buildMarkers(props), [props.markersDataSource]);
+    // Rebuilt on every render: a value edited on the page (a check box bound to Group.Visible, say)
+    // can reach the widget without the data source object changing, so memoising on the data source
+    // missed it. The result keeps its identity while nothing in it changed, which is what the effects
+    // below depend on.
+    const { items, objects: itemObjects } = useStable(buildItems(props), built => built.items);
+    const { groups, objects: groupObjects } = useStable(buildGroups(props), built => built.groups);
+    const markers = useStable(buildMarkers(props), built => built);
 
     // Mendix reports `loading` while it refreshes a data source, handing out an empty list in the
     // meantime. Applying that would clear the timeline and flash it back a moment later, so
@@ -262,7 +258,13 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         dropContainers(["group"], removed);
 
         const hasGroups = groups.length > 0;
-        if (hasGroups !== groupsAttachedRef.current) {
+        // vis-timeline only applies subgroup visibility when it lays the groups out from scratch, so a
+        // change to it re-attaches the groups, the way the vis-timeline example does.
+        const subgroupVisibility = JSON.stringify(groups.map(group => [group.id, group.subgroupVisibility]));
+        const visibilityChanged =
+            groupsAttachedRef.current && subgroupVisibility !== appliedSubgroupVisibilityRef.current;
+        appliedSubgroupVisibilityRef.current = subgroupVisibility;
+        if (hasGroups !== groupsAttachedRef.current || (hasGroups && visibilityChanged)) {
             groupsAttachedRef.current = hasGroups;
             timeline.setGroups(
                 hasGroups ? (groupsDataSetRef.current as unknown as DataGroupCollectionType) : undefined
@@ -496,6 +498,16 @@ function caretRangeAt(x: number, y: number): Range | null {
         return range;
     }
     return doc.caretRangeFromPoint?.(x, y) ?? null;
+}
+
+/** Returns the previous value for as long as its content, as JSON, is the same. */
+function useStable<T>(value: T, content: (value: T) => unknown): T {
+    const key = JSON.stringify(content(value));
+    const ref = useRef<{ key: string; value: T } | undefined>(undefined);
+    if (!ref.current || ref.current.key !== key) {
+        ref.current = { key, value };
+    }
+    return ref.current.value;
 }
 
 function sorted(ids: readonly VisId[]): VisId[] {
@@ -811,6 +823,35 @@ function registerEvents(
             rangeByUser: properties?.byUser === true
         })
     );
+
+    // vis-timeline has no event for "what is in view changed", so it is worked out after every window
+    // change, scroll and redraw. Only an actual change reaches Mendix, which also keeps a microflow that
+    // changes the page from triggering itself again.
+    let lastInView = "";
+    let inViewTimer: number | undefined;
+    const reportInView = (): void => {
+        window.clearTimeout(inViewTimer);
+        inViewTimer = window.setTimeout(() => {
+            const action = propsRef.current.visibleChangedAction;
+            if (!action) {
+                return;
+            }
+            const itemIds = timeline.getVisibleItems().map(String).join(",");
+            const groupIds = (
+                (timeline as unknown as { getVisibleGroups?: () => unknown[] }).getVisibleGroups?.() ?? []
+            )
+                .map(String)
+                .join(",");
+            if (itemIds + "|" + groupIds === lastInView) {
+                return;
+            }
+            lastInView = itemIds + "|" + groupIds;
+            fireAction(action, { visibleItemIDs: itemIds, visibleGroupIDs: groupIds });
+        }, 250);
+    };
+    timeline.on("rangechanged", reportInView);
+    timeline.on("scrollSide", reportInView);
+    timeline.on("changed", reportInView);
 
     timeline.on("timechange", properties =>
         fireAction(propsRef.current.markerChangeAction, {

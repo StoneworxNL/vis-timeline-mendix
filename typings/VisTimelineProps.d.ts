@@ -204,6 +204,7 @@ export interface VisTimelineContainerProps {
     itemRemoveAction?: ListActionValue;
     selectAction?: ActionValue<{ selectedItemIDs: Option<string> }>;
     rangeChangedAction?: ActionValue<{ rangeStart: Option<Date>; rangeEnd: Option<Date>; rangeByUser: Option<boolean> }>;
+    visibleChangedAction?: ActionValue<{ visibleItemIDs: Option<string>; visibleGroupIDs: Option<string> }>;
     onInitialDrawCompleteAction?: ActionValue;
     markerChangeAction?: ActionValue<{ movingMarkerID: Option<string>; movingMarkerTime: Option<Date> }>;
     markerChangedAction?: ActionValue<{ movedMarkerID: Option<string>; movedMarkerTime: Option<Date> }>;
@@ -392,6 +393,7 @@ export interface VisTimelinePreviewProps {
     itemRemoveAction: {} | null;
     selectAction: {} | null;
     rangeChangedAction: {} | null;
+    visibleChangedAction: {} | null;
     onInitialDrawCompleteAction: {} | null;
     markerChangeAction: {} | null;
     markerChangedAction: {} | null;
