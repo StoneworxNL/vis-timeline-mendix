@@ -450,6 +450,22 @@
                     <caption>Marker tooltip</caption>
                     <description>Tooltip shown when hovering the marker.</description>
                 </property>
+                <property key="markerLabel" type="textTemplate" dataSource="markersDataSource" required="false">
+                    <caption>Marker label</caption>
+                    <description>
+                        Text shown on the bar itself, at the top of the timeline. Leave empty for a plain bar.
+                    </description>
+                </property>
+                <property key="markerLabelEditable" type="attribute" dataSource="markersDataSource" required="false">
+                    <caption>Marker label editable</caption>
+                    <description>
+                        Lets the user type in the label. The text is handed to On marker label changing and On marker
+                        label changed; store it in the attribute behind the label to keep it.
+                    </description>
+                    <attributeTypes>
+                        <attributeType name="Boolean" />
+                    </attributeTypes>
+                </property>
             </propertyGroup>
         </propertyGroup>
         <propertyGroup caption="Appearance">
@@ -1007,6 +1023,7 @@
                         <actionVariable key="clickedGroupID" type="String" caption="Clicked group ID" />
                         <actionVariable key="clickedTime" type="DateTime" caption="Clicked time" />
                         <actionVariable key="clickedWhat" type="String" caption="Clicked what" />
+                        <actionVariable key="clickedMarkerID" type="String" caption="Clicked marker ID" />
                     </actionVariables>
                 </property>
                 <property key="clickScope" type="enumeration" defaultValue="item">
@@ -1029,6 +1046,7 @@
                         <actionVariable key="doubleClickedGroupID" type="String" caption="Double clicked group ID" />
                         <actionVariable key="doubleClickedTime" type="DateTime" caption="Double clicked time" />
                         <actionVariable key="doubleClickedWhat" type="String" caption="Double clicked what" />
+                        <actionVariable key="doubleClickedMarkerID" type="String" caption="Double clicked marker ID" />
                     </actionVariables>
                 </property>
                 <property key="doubleClickScope" type="enumeration" defaultValue="item">
@@ -1179,6 +1197,22 @@
                         <actionVariable key="movedMarkerTime" type="DateTime" caption="Marker time" />
                     </actionVariables>
                 </property>
+                <property key="markerLabelChangingAction" type="action" required="false">
+                    <caption>On marker label changing</caption>
+                    <description>Triggered on every keystroke while an editable marker label is typed in.</description>
+                    <actionVariables>
+                        <actionVariable key="changingMarkerID" type="String" caption="Marker ID" />
+                        <actionVariable key="changingMarkerLabel" type="String" caption="Marker label" />
+                    </actionVariables>
+                </property>
+                <property key="markerLabelChangedAction" type="action" required="false">
+                    <caption>On marker label changed</caption>
+                    <description>Triggered when the user leaves an editable marker label after changing it.</description>
+                    <actionVariables>
+                        <actionVariable key="changedMarkerID" type="String" caption="Marker ID" />
+                        <actionVariable key="changedMarkerLabel" type="String" caption="Marker label" />
+                    </actionVariables>
+                </property>
             </propertyGroup>
             <propertyGroup caption="Item manipulation">
                 <property key="onAddAction" type="action" required="false">
@@ -1189,6 +1223,7 @@
                         <actionVariable key="addedStart" type="DateTime" caption="Start" />
                         <actionVariable key="addedEnd" type="DateTime" caption="End" />
                         <actionVariable key="addedGroupID" type="String" caption="Group ID" />
+                        <actionVariable key="addedContent" type="String" caption="Content" />
                     </actionVariables>
                 </property>
                 <property key="onUpdateAction" type="action" required="false">

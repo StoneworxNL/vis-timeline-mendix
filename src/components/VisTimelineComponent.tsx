@@ -13,7 +13,7 @@ import {
 import "vis-timeline/styles/vis-timeline-graph2d.min.css";
 
 import { VisTimelineContainerProps } from "../../typings/VisTimelineProps";
-import { buildGroups, buildItems, buildMarkers, VisGroup, VisItem, VisMarker } from "../utils/data";
+import { buildGroups, buildItems, buildMarkers, focusWindow, VisGroup, VisItem, VisMarker } from "../utils/data";
 import { syncMarkers } from "../utils/sync";
 import { fitWithFallback, inScope, isSettled, syncWhenSettled } from "../utils/guards";
 import { fireAction, fireItemAction, idToString, readSelection, toBig, writeSelection } from "../utils/actions";
@@ -181,6 +181,15 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         });
     }, []);
 
+    // Used instead of vis-timeline's focus(), which throws for box and point items (see focusWindow).
+    const focusItems = useCallback((ids: VisId[], animationOptions: TimelineAnimationOptions) => {
+        const timeline = timelineRef.current;
+        const target = timeline && focusWindow(itemsRef.current, ids, timeline.getWindow());
+        if (timeline && target) {
+            timeline.setWindow(target.start, target.end, animationOptions);
+        }
+    }, []);
+
     const functionOptions = useMemo(
         () => buildFunctionOptions(propsRef, templateContainer, resolveItem),
         [templateContainer, resolveItem]
@@ -207,6 +216,7 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         }
         timelineRef.current = timeline;
         registerEvents(timeline, propsRef, appliedSelectionRef, resolveItem);
+        container.addEventListener("pointerup", placeCaretInMarkerLabel, true);
 
         // Custom time bars live on the timeline instance rather than in a data set, so they have to
         // be re-applied against a clean slate when the timeline is recreated.
@@ -217,6 +227,7 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
             groupsAttachedRef.current = false;
             hasFittedRef.current = false;
             appliedMarkers.clear();
+            container.removeEventListener("pointerup", placeCaretInMarkerLabel, true);
             timeline.destroy();
         };
     }, [functionOptions, resolveItem]);
@@ -300,6 +311,8 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
 
     useEffect(() => () => cancelAnimationFrame(pendingFitRef.current), []);
 
+    useEffect(registerDragSources, []);
+
     useEffect(() => {
         const timeline = timelineRef.current;
         if (timeline && markersSettled) {
@@ -363,9 +376,9 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         appliedSelectionRef.current = wanted;
         timeline.setSelection(wanted);
         if (focusOnSelection && wanted.length > 0) {
-            timeline.focus(wanted, animation());
+            focusItems(wanted, animation());
         }
-    }, [selectionKey, focusOnSelection, animation]);
+    }, [selectionKey, focusOnSelection, animation, focusItems]);
 
     const command = props.commandAttribute?.value;
     useEffect(() => {
@@ -381,14 +394,14 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         }
         lastCommandRef.current = command;
         try {
-            runCommand(timeline, command, animation(), fitToItems);
+            runCommand(timeline, command, animation(), fitToItems, focusItems);
         } catch (error) {
             console.warn(`VisTimeline: command '${command}' failed.`, error);
         }
         if (!attribute.readOnly) {
             attribute.setValue("");
         }
-    }, [command, animation, fitToItems]);
+    }, [command, animation, fitToItems, focusItems]);
 
     // A template is filled by React one microtask after vis-timeline asked for it, so the timeline
     // has to measure the items again once the widgets inside them have actually rendered.
@@ -418,6 +431,71 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
             {renderPortals(containersRef.current, objectsRef.current, props)}
         </div>
     );
+}
+
+/**
+ * vis-timeline only accepts a drop that carries the item as JSON in the drag data, which a Mendix
+ * page cannot set. Any element with a data-vis-timeline-item attribute (and draggable="true") is
+ * therefore made a drag source here: its attribute value, for example {"content":"New item"}, is
+ * handed over as the drag data. One listener serves every timeline on the page.
+ */
+const DRAG_SOURCE_ATTRIBUTE = "data-vis-timeline-item";
+let dragSourceUsers = 0;
+
+function onDragStart(event: DragEvent): void {
+    const target = event.target instanceof Element ? event.target : null;
+    const json = target?.closest(`[${DRAG_SOURCE_ATTRIBUTE}]`)?.getAttribute(DRAG_SOURCE_ATTRIBUTE);
+    if (json && event.dataTransfer) {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text", json);
+    }
+}
+
+function registerDragSources(): () => void {
+    if (dragSourceUsers++ === 0) {
+        document.addEventListener("dragstart", onDragStart);
+    }
+    return () => {
+        if (--dragSourceUsers === 0) {
+            document.removeEventListener("dragstart", onDragStart);
+        }
+    };
+}
+
+/**
+ * vis-timeline focuses an editable marker label on pointerdown, but the drag handling on the time
+ * bar keeps the browser from placing the caret, so typing always started at the beginning of the
+ * label. The caret is put where the user clicked instead, unless they selected a piece of text.
+ */
+function placeCaretInMarkerLabel(event: PointerEvent): void {
+    const target = event.target instanceof Element ? event.target : null;
+    const label = target?.closest('.vis-custom-time-marker[contenteditable="true"]');
+    const selection = window.getSelection();
+    if (!label || !selection || (!selection.isCollapsed && label.contains(selection.anchorNode))) {
+        return;
+    }
+    const caret = caretRangeAt(event.clientX, event.clientY);
+    if (caret && label.contains(caret.startContainer)) {
+        selection.removeAllRanges();
+        selection.addRange(caret);
+    }
+}
+
+type CaretDocument = Document & {
+    caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null;
+    caretRangeFromPoint?: (x: number, y: number) => Range | null;
+};
+
+function caretRangeAt(x: number, y: number): Range | null {
+    const doc = document as CaretDocument;
+    const position = doc.caretPositionFromPoint?.(x, y);
+    if (position) {
+        const range = document.createRange();
+        range.setStart(position.offsetNode, position.offset);
+        range.collapse(true);
+        return range;
+    }
+    return doc.caretRangeFromPoint?.(x, y) ?? null;
 }
 
 function sorted(ids: readonly VisId[]): VisId[] {
@@ -520,7 +598,8 @@ function buildFunctionOptions(
                 data: JSON.stringify(item),
                 addedStart: toDate(item?.start),
                 addedEnd: toDate(item?.end),
-                addedGroupID: idToString(item?.group)
+                addedGroupID: idToString(item?.group),
+                addedContent: typeof item?.content === "string" ? item.content : undefined
             });
             callback(props.addMode === "addAndCallAction" ? item : null);
         },
@@ -582,14 +661,14 @@ function buildFunctionOptions(
             callback(props.removeMode === "removeAndCallAction" ? group : null);
         },
         // Dragging a group to another position only sticks when the values the groups are ordered
-        // by are swapped as well.
-        groupOrderSwap: (fromGroup: any, toGroup: any, groups: any) => {
+        // by are swapped as well. vis-timeline writes the two group objects it passes in back to
+        // its data set right after this call, so the swap has to be made on those objects; updating
+        // the data set here instead would be overwritten with the old values straight away.
+        groupOrderSwap: (fromGroup: any, toGroup: any) => {
             const fromValue = fromGroup?.value;
             const toValue = toGroup?.value;
-            groups.update([
-                { id: fromGroup.id, value: toValue },
-                { id: toGroup.id, value: fromValue }
-            ]);
+            fromGroup.value = toValue;
+            toGroup.value = fromValue;
             fireAction(propsRef.current.groupOrderSwapAction, {
                 swapGroupID: idToString(fromGroup?.id),
                 swapGroupOrderValue: toBig(toValue),
@@ -642,7 +721,8 @@ function registerEvents(
                 clickedItemID: idToString(properties.item),
                 clickedGroupID: idToString(properties.group),
                 clickedTime: toDate(properties.time),
-                clickedWhat: properties.what ?? undefined
+                clickedWhat: properties.what ?? undefined,
+                clickedMarkerID: idToString(properties.customTime)
             });
         }
         fireItemAction(props.itemClickAction, resolveItem(idToString(properties.item)));
@@ -658,7 +738,8 @@ function registerEvents(
                 doubleClickedItemID: idToString(properties.item),
                 doubleClickedGroupID: idToString(properties.group),
                 doubleClickedTime: toDate(properties.time),
-                doubleClickedWhat: properties.what ?? undefined
+                doubleClickedWhat: properties.what ?? undefined,
+                doubleClickedMarkerID: idToString(properties.customTime)
             });
         }
         fireItemAction(props.itemDoubleClickAction, resolveItem(idToString(properties.item)));
@@ -737,12 +818,35 @@ function registerEvents(
             movingMarkerTime: toDate(properties?.time)
         })
     );
+    // vis-timeline hands the label over as HTML; Mendix gets the text the user actually typed.
+    timeline.on("markerchange", properties =>
+        fireAction(propsRef.current.markerLabelChangingAction, {
+            changingMarkerID: idToString(properties?.id),
+            changingMarkerLabel: htmlToText(properties?.title)
+        })
+    );
+    timeline.on("markerchanged", properties =>
+        fireAction(propsRef.current.markerLabelChangedAction, {
+            changedMarkerID: idToString(properties?.id),
+            changedMarkerLabel: htmlToText(properties?.title)
+        })
+    );
+
     timeline.on("timechanged", properties =>
         fireAction(propsRef.current.markerChangedAction, {
             movedMarkerID: idToString(properties?.id),
             movedMarkerTime: toDate(properties?.time)
         })
     );
+}
+
+function htmlToText(html: unknown): string {
+    if (typeof html !== "string") {
+        return "";
+    }
+    // DOMParser builds an inert document, so markup typed into the label never runs.
+    const parsed = new DOMParser().parseFromString(html.replace(/<br\s*\/?>/gi, "\n"), "text/html");
+    return (parsed.body.textContent ?? "").trim();
 }
 
 function isObjectItem(object: ObjectItem | undefined): object is ObjectItem {

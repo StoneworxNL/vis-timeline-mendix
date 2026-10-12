@@ -81,6 +81,7 @@ function fakeTimeline(): MockedTimeline {
         addCustomTime: jest.fn(),
         setCustomTime: jest.fn(),
         setCustomTimeTitle: jest.fn(),
+        setCustomTimeMarker: jest.fn(),
         removeCustomTime: jest.fn()
     } as unknown as MockedTimeline;
 }
@@ -142,5 +143,57 @@ describe("syncMarkers", () => {
         expect(applied.has("a")).toBe(false);
         expect(applied.has("b")).toBe(true);
         warn.mockRestore();
+    });
+
+    describe("labels", () => {
+        const labelled = (label?: string, labelEditable = false): VisMarker => ({
+            ...marker("a", "2024-05-01T00:00:00Z"),
+            label,
+            labelEditable
+        });
+
+        it("draws no label for a plain bar", () => {
+            const timeline = fakeTimeline();
+            syncMarkers(timeline, [labelled()], new Map());
+            expect(timeline.setCustomTimeMarker).not.toHaveBeenCalled();
+        });
+
+        it("draws the label once and again only when it changes", () => {
+            const timeline = fakeTimeline();
+            const applied = new Map<VisId, VisMarker>();
+            syncMarkers(timeline, [labelled("Go live", true)], applied);
+            expect(timeline.setCustomTimeMarker).toHaveBeenCalledWith("Go live", "a", true);
+
+            (timeline.setCustomTimeMarker as jest.Mock).mockClear();
+            syncMarkers(timeline, [labelled("Go live", true)], applied);
+            expect(timeline.setCustomTimeMarker).not.toHaveBeenCalled();
+
+            syncMarkers(timeline, [labelled(undefined)], applied);
+            expect(timeline.setCustomTimeMarker).toHaveBeenCalledWith("", "a", false);
+        });
+
+        it("leaves a label alone while the user is typing in it", () => {
+            const timeline = fakeTimeline();
+            const applied = new Map<VisId, VisMarker>();
+            syncMarkers(timeline, [labelled("Go live", true)], applied);
+
+            const bar = document.createElement("div") as HTMLDivElement & Record<string, unknown>;
+            bar["custom-time"] = { options: { id: "a" } };
+            const label = document.createElement("div");
+            label.className = "vis-custom-time-marker";
+            label.tabIndex = 0;
+            bar.appendChild(label);
+            document.body.appendChild(bar);
+            label.focus();
+
+            (timeline.setCustomTimeMarker as jest.Mock).mockClear();
+            syncMarkers(timeline, [labelled("Go li", true)], applied);
+            expect(timeline.setCustomTimeMarker).not.toHaveBeenCalled();
+
+            label.blur();
+            syncMarkers(timeline, [labelled("Go li", true)], applied);
+            expect(timeline.setCustomTimeMarker).toHaveBeenCalledWith("Go li", "a", true);
+            bar.remove();
+        });
     });
 });

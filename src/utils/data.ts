@@ -45,6 +45,9 @@ export interface VisMarker {
     id: VisId;
     time: Date;
     title?: string;
+    /** Text drawn on the bar itself (vis-timeline's custom time marker). */
+    label?: string;
+    labelEditable?: boolean;
 }
 
 export interface HiddenDate {
@@ -107,10 +110,23 @@ function buildItemEditable(props: VisTimelineContainerProps, object: ObjectItem)
     const updateGroup = readAttribute(props.itemEditableUpdateGroup, object);
     const remove = readAttribute(props.itemEditableRemove, object);
 
+    const editable = readAttribute(props.itemEditable, object);
+
     if (updateTime === undefined && updateGroup === undefined && remove === undefined) {
-        return readAttribute(props.itemEditable, object);
+        return editable;
     }
-    return { updateTime, updateGroup, remove };
+    // The specific flags win; the general Editable flag fills in the ones that are not mapped.
+    const resolved = {
+        updateTime: updateTime ?? editable,
+        updateGroup: updateGroup ?? editable,
+        remove: remove ?? editable
+    };
+    // vis-timeline only shows the drag tooltip (tooltipOnItemUpdateTime) for an item whose editable
+    // field is literally `true`, so an object that grants everything is handed over as a boolean.
+    if (resolved.updateTime === true && resolved.updateGroup === true && resolved.remove === true) {
+        return true;
+    }
+    return resolved;
 }
 
 /** Maps the groups data source onto vis-timeline groups, resolving nested groups through the
@@ -201,7 +217,13 @@ export function buildMarkers(props: VisTimelineContainerProps): VisMarker[] {
         if (id === undefined || time === undefined) {
             continue;
         }
-        markers.push({ id, time, title: readTemplate(props.markerTitle, object) });
+        markers.push({
+            id,
+            time,
+            title: readTemplate(props.markerTitle, object),
+            label: readTemplate(props.markerLabel, object),
+            labelEditable: readAttribute(props.markerLabelEditable, object) === true
+        });
     }
     return markers;
 }
@@ -247,6 +269,30 @@ export function itemsRange(items: VisItem[]): { start: Date; end: Date } | undef
     const span = max - min;
     const padding = span > 0 ? span * 0.05 : HALF_DAY;
     return { start: new Date(min - padding), end: new Date(max + padding) };
+}
+
+/**
+ * Where the window has to go to show the given items, keeping the current zoom level unless the
+ * items need more room - the same thing vis-timeline's own focus() does.
+ *
+ * vis-timeline's focus() reads `end` from every item that has the key, and the items here always
+ * carry it (see VisItem), so it throws for box and point items. Unknown ids are skipped.
+ */
+export function focusWindow(
+    items: VisItem[],
+    ids: readonly VisId[],
+    current: { start: Date; end: Date }
+): { start: Date; end: Date } | undefined {
+    const wanted = new Set(ids);
+    const matching = items.filter(item => wanted.has(item.id));
+    if (matching.length === 0) {
+        return undefined;
+    }
+    const start = Math.min(...matching.map(item => item.start.getTime()));
+    const end = Math.max(...matching.map(item => (item.end ?? item.start).getTime()));
+    const interval = Math.max(current.end.getTime() - current.start.getTime(), (end - start) * 1.1);
+    const middle = (start + end) / 2;
+    return { start: new Date(middle - interval / 2), end: new Date(middle + interval / 2) };
 }
 
 /** Stable string used to detect which rows really changed, so untouched rows are never handed back

@@ -14,8 +14,8 @@ without writing JavaScript.
     subgroup visibility.
 -   **Templates**: item content, the visible frame of a range item, the group label and the tooltip can each be built
     from any Mendix widgets, rendered through React portals into the elements vis-timeline owns.
--   **Markers**: the current time bar plus a data source of draggable custom time bars, each with its own tooltip and
-    CSS class.
+-   **Markers**: the current time bar plus a data source of draggable custom time bars, each with its own tooltip, CSS
+    class and an optional label on the bar that the user can type in.
 -   **Time axis**: visible window, min/max limits, fixed scale and step, custom moment.js label formats, week scale,
     locale and locale label overrides, a fixed time zone offset, hidden periods and rolling mode.
 -   **Interaction**: selection (single, multi, per group, sequential) through the Mendix selection property or a two way
@@ -23,8 +23,8 @@ without writing JavaScript.
 -   **Editing**: add, remove, drag in time, drag between groups, group add/remove/reorder, snapping to nice values or to
     a fixed number of minutes, and manipulation callbacks that hand the change to a microflow.
 -   **Events**: click, double click, context menu, item hover in/out, external drop, selection change, window change,
-    initial draw, marker move, and the full set of item and group manipulation events - at widget level with the ids, or
-    bound to the items data source so the microflow receives the object.
+    initial draw, marker move and marker label change, and the full set of item and group manipulation events - at
+    widget level with the ids, or bound to the items data source so the microflow receives the object.
 -   **Escape hatches**: a `Command` attribute for the imperative API, extra options as JSON, data attributes, and an XSS
     protection switch for HTML content.
 
@@ -137,13 +137,30 @@ snapping (**Snap to minutes**), item ordering (**Order value**), group ordering 
 
 ### Drag and drop onto the timeline
 
-vis-timeline only reports a drop when the dragged element carries JSON with a `content` field:
+vis-timeline only reports a drop when the dragged element carries JSON with a `content` field. A Mendix page cannot set
+drag data, so the widget does it: any element with `draggable="true"` and a `data-vis-timeline-item` attribute becomes a
+drag source, and the attribute value is handed over as the drag data. With the HTML element widget that is two
+attributes, for example `data-vis-timeline-item` = `{"type": "range", "content": "New task"}`.
+
+From your own JavaScript the same works directly:
 
 ```js
 event.dataTransfer.setData("text", JSON.stringify({ content: "New task", target: "item" }));
 ```
 
-The raw JSON is handed to **On drop** together with the time and group it was dropped on.
+The raw JSON is handed to **On drop** together with the time and group it was dropped on. When **Editable: add** is on,
+the drop also runs **On add**, whose **Content** variable carries the dropped item's content.
+
+### Marker labels
+
+**Marker label** puts text on the bar itself, as vis-timeline's custom time markers do; **Marker tooltip** stays the
+hover text. Map **Marker label editable** to a Boolean to let the user type in the label. Every keystroke runs **On
+marker label changing** and leaving the label runs **On marker label changed**, both with the marker id and the plain
+text of the label; store the text in the attribute behind the label to keep it. A label the user is typing in is never
+rebuilt from Mendix data, so the caret stays put while those actions run.
+
+**On click** and **On double click** also report the id of the marker that was hit, which is what the vis-timeline
+example of adding a marker on double click and removing it on a second double click needs.
 
 ## Upgrading from the first version
 
@@ -179,13 +196,13 @@ change, and pages built against the old widget need a look:
 | Dynamic content, HTML data, Templates, React components      | Custom content widgets                                        |
 | Tooltips, Tooltip template, onUpdateTime tooltip             | Item tooltip group, Tooltip while dragging                    |
 | Item ordering, Range overflow                                | Order value, Limit size                                       |
-| Markers, Marker events, Editable markers, Current time       | Markers group, On marker moving/moved                         |
+| Markers, Marker events, Editable markers, Current time       | Markers group, Marker label, On marker label changing/changed |
 | A lot of grouped data, performance, Stress performance       | Only changed rows are pushed to vis, clustering               |
 | Clustering                                                   | Cluster items and its sub properties                          |
 | Custom label format, Show day scale with calendar week       | Minor/Major label formats, Show week scale                    |
 | Localization, Custom localization, Time zone, RTL            | Localization group, Right to left                             |
 | Data attributes (all)                                        | Data attributes                                               |
-| Drag & drop                                                  | On drop                                                       |
+| Drag & drop                                                  | On drop, data-vis-timeline-item drag sources                  |
 | Hiding periods                                               | Hidden periods data source                                    |
 | Horizontal/Vertical/Bi-directional scroll, Invert            | Move and zoom group                                           |
 | Loading screen                                               | Show loading overlay, On initial draw complete                |

@@ -102,6 +102,8 @@ export interface VisTimelineContainerProps {
     markerId?: ListAttributeValue<string | Big>;
     markerTime?: ListAttributeValue<Date>;
     markerTitle?: ListExpressionValue<string>;
+    markerLabel?: ListExpressionValue<string>;
+    markerLabelEditable?: ListAttributeValue<boolean>;
     height?: DynamicValue<string>;
     minHeight?: DynamicValue<string>;
     maxHeight?: DynamicValue<string>;
@@ -185,9 +187,9 @@ export interface VisTimelineContainerProps {
     addMode: AddModeEnum;
     moveMode: MoveModeEnum;
     removeMode: RemoveModeEnum;
-    clickAction?: ActionValue<{ clickedItemID: Option<string>; clickedGroupID: Option<string>; clickedTime: Option<Date>; clickedWhat: Option<string> }>;
+    clickAction?: ActionValue<{ clickedItemID: Option<string>; clickedGroupID: Option<string>; clickedTime: Option<Date>; clickedWhat: Option<string>; clickedMarkerID: Option<string> }>;
     clickScope: ClickScopeEnum;
-    doubleClickAction?: ActionValue<{ doubleClickedItemID: Option<string>; doubleClickedGroupID: Option<string>; doubleClickedTime: Option<Date>; doubleClickedWhat: Option<string> }>;
+    doubleClickAction?: ActionValue<{ doubleClickedItemID: Option<string>; doubleClickedGroupID: Option<string>; doubleClickedTime: Option<Date>; doubleClickedWhat: Option<string>; doubleClickedMarkerID: Option<string> }>;
     doubleClickScope: DoubleClickScopeEnum;
     contextMenuAction?: ActionValue<{ contextItemID: Option<string>; contextGroupID: Option<string>; contextTime: Option<Date>; contextWhat: Option<string> }>;
     contextMenuScope: ContextMenuScopeEnum;
@@ -205,7 +207,9 @@ export interface VisTimelineContainerProps {
     onInitialDrawCompleteAction?: ActionValue;
     markerChangeAction?: ActionValue<{ movingMarkerID: Option<string>; movingMarkerTime: Option<Date> }>;
     markerChangedAction?: ActionValue<{ movedMarkerID: Option<string>; movedMarkerTime: Option<Date> }>;
-    onAddAction?: ActionValue<{ data: Option<string>; addedStart: Option<Date>; addedEnd: Option<Date>; addedGroupID: Option<string> }>;
+    markerLabelChangingAction?: ActionValue<{ changingMarkerID: Option<string>; changingMarkerLabel: Option<string> }>;
+    markerLabelChangedAction?: ActionValue<{ changedMarkerID: Option<string>; changedMarkerLabel: Option<string> }>;
+    onAddAction?: ActionValue<{ data: Option<string>; addedStart: Option<Date>; addedEnd: Option<Date>; addedGroupID: Option<string>; addedContent: Option<string> }>;
     onUpdateAction?: ActionValue<{ data: Option<string>; updatedItemID: Option<string> }>;
     moveAction?: ActionValue<{ movedItemID: Option<string>; movedStart: Option<Date>; movedEnd: Option<Date>; movedGroupID: Option<string> }>;
     movingAction?: ActionValue<{ movingItemID: Option<string>; movingStart: Option<Date>; movingEnd: Option<Date>; movingGroupID: Option<string> }>;
@@ -286,6 +290,8 @@ export interface VisTimelinePreviewProps {
     markerId: string;
     markerTime: string;
     markerTitle: string;
+    markerLabel: string;
+    markerLabelEditable: string;
     height: string;
     minHeight: string;
     maxHeight: string;
@@ -389,6 +395,8 @@ export interface VisTimelinePreviewProps {
     onInitialDrawCompleteAction: {} | null;
     markerChangeAction: {} | null;
     markerChangedAction: {} | null;
+    markerLabelChangingAction: {} | null;
+    markerLabelChangedAction: {} | null;
     onAddAction: {} | null;
     onUpdateAction: {} | null;
     moveAction: {} | null;

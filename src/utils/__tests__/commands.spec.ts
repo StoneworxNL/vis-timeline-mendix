@@ -58,6 +58,14 @@ describe("runCommand", () => {
         expect(timeline.focus).toHaveBeenCalledWith(["1", "2", "3"], animation);
     });
 
+    it("hands focusing to the widget when it supplies its own", () => {
+        const timeline = fakeTimeline();
+        const focus = jest.fn();
+        runCommand(timeline, "focus:4", animation, jest.fn(), focus);
+        expect(focus).toHaveBeenCalledWith(["4"], animation);
+        expect(timeline.focus).not.toHaveBeenCalled();
+    });
+
     it("focuses the current selection, and does nothing when there is none", () => {
         const timeline = fakeTimeline();
         runCommand(timeline, "focusSelection", animation, jest.fn());

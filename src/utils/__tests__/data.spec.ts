@@ -1,4 +1,4 @@
-import { buildGroups, buildHiddenDates, buildItems, buildMarkers, itemsRange } from "../data";
+import { buildGroups, buildHiddenDates, buildItems, buildMarkers, focusWindow, itemsRange, VisItem } from "../data";
 import {
     attribute,
     containerProps,
@@ -128,7 +128,25 @@ describe("buildItems", () => {
                     itemEditableUpdateTime: attribute("drag")
                 })
             );
+            expect(items[0].editable).toEqual({ updateTime: true, updateGroup: false, remove: false });
+        });
+
+        it("leaves a fine grained flag undefined when nothing else is mapped", () => {
+            const { items } = buildItems(
+                itemProps({ VisItemsDataSource: listValue(rows), itemEditableUpdateTime: attribute("drag") })
+            );
             expect(items[0].editable).toEqual({ updateTime: true, updateGroup: undefined, remove: undefined });
+        });
+
+        it("hands over true when every flag allows editing, so the drag tooltip can show", () => {
+            const { items } = buildItems(
+                itemProps({
+                    VisItemsDataSource: listValue(rows),
+                    itemEditable: attribute("drag"),
+                    itemEditableUpdateTime: attribute("drag")
+                })
+            );
+            expect(items[0].editable).toBe(true);
         });
 
         it("stays out of the way when the timeline settings override items", () => {
@@ -219,7 +237,29 @@ describe("buildMarkers", () => {
                 markerTitle: textTemplate(row => row.label)
             } as any)
         );
-        expect(markers).toEqual([{ id: "a", time: new Date("2024-05-01T00:00:00Z"), title: "Kickoff" }]);
+        expect(markers).toEqual([
+            {
+                id: "a",
+                time: new Date("2024-05-01T00:00:00Z"),
+                title: "Kickoff",
+                label: undefined,
+                labelEditable: false
+            }
+        ]);
+    });
+
+    it("reads the label and whether it can be typed in", () => {
+        const rows: Row[] = [{ id: "a", time: "2024-05-01T00:00:00Z", text: "Go live", edit: true }];
+        const [marker] = buildMarkers(
+            containerProps({
+                markersDataSource: listValue(rows),
+                markerId: attribute("id"),
+                markerTime: dateAttribute("time"),
+                markerLabel: textTemplate(row => row.text),
+                markerLabelEditable: attribute("edit")
+            } as any)
+        );
+        expect(marker).toMatchObject({ label: "Go live", labelEditable: true });
     });
 });
 
@@ -263,5 +303,28 @@ describe("itemsRange", () => {
 
     it("has no answer without items", () => {
         expect(itemsRange([])).toBeUndefined();
+    });
+});
+
+describe("focusWindow", () => {
+    const day = (d: number): Date => new Date(Date.UTC(2024, 4, d));
+    const items = [
+        { id: "box", content: "", start: day(10), end: undefined },
+        { id: "range", content: "", start: day(12), end: day(14) }
+    ] as VisItem[];
+    const window = { start: day(1), end: day(5) };
+
+    it("centres a box item without needing an end date, keeping the zoom level", () => {
+        expect(focusWindow(items, ["box"], window)).toEqual({
+            start: new Date(day(10).getTime() - 2 * 86400000),
+            end: new Date(day(10).getTime() + 2 * 86400000)
+        });
+    });
+
+    it("widens the window when the items need more room, and ignores unknown ids", () => {
+        const target = focusWindow(items, ["box", "range", "nope"], { start: day(1), end: day(2) })!;
+        expect(target.start.getTime()).toBeLessThan(day(10).getTime());
+        expect(target.end.getTime()).toBeGreaterThan(day(14).getTime());
+        expect(focusWindow(items, ["nope"], window)).toBeUndefined();
     });
 });

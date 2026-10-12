@@ -76,6 +76,11 @@ export function buildStaticOptions(props: VisTimelineContainerProps): TimelineOp
     if (props.groupOrderMode !== "none") {
         options.groupOrder = props.groupOrderMode;
     }
+    // vis-timeline only stacks by a field when it is given an order function; without it the
+    // Order value attribute was read but never used.
+    if (props.itemOrderValue) {
+        options.order = (a: any, b: any) => (a?.orderValue ?? 0) - (b?.orderValue ?? 0);
+    }
     if (props.timeAxisScale !== "auto") {
         options.timeAxis = { scale: props.timeAxisScale, step: props.timeAxisStep };
     }

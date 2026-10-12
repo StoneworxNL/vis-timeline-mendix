@@ -35,6 +35,13 @@ describe("buildStaticOptions", () => {
         expect(options.locale).toBe("en");
     });
 
+    it("stacks items by their order value only when that attribute is mapped", () => {
+        expect(buildStaticOptions(containerProps()).order).toBeUndefined();
+        const order = buildStaticOptions(containerProps({ itemOrderValue: attribute("Order") } as any)).order as any;
+        expect(order({ orderValue: 1 }, { orderValue: 3 })).toBeLessThan(0);
+        expect(order({ orderValue: 5 }, { orderValue: 2 })).toBeGreaterThan(0);
+    });
+
     it("sets a fixed scale only when one was chosen", () => {
         const options = buildStaticOptions(containerProps({ timeAxisScale: "hour", timeAxisStep: 4 } as any));
         expect(options.timeAxis).toEqual({ scale: "hour", step: 4 });

@@ -49,3 +49,13 @@
         animation: none;
     }
 }
+
+/* A marker whose label was cleared keeps an empty element behind; hide it unless it can be typed in. */
+.vis-timeline-widget .vis-custom-time-marker:empty:not([contenteditable="true"]) {
+    display: none;
+}
+
+.vis-timeline-widget .vis-custom-time-marker[contenteditable="true"] {
+    min-width: 2em;
+    cursor: text;
+}

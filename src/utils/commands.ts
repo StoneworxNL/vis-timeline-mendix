@@ -10,7 +10,8 @@ export function runCommand(
     timeline: Timeline,
     raw: string,
     animation: TimelineAnimationOptions,
-    fit: (animation: TimelineAnimationOptions) => void
+    fit: (animation: TimelineAnimationOptions) => void,
+    focus: (ids: string[], animation: TimelineAnimationOptions) => void = (ids, a) => timeline.focus(ids, a)
 ): boolean {
     const separator = raw.indexOf(":");
     const name = (separator === -1 ? raw : raw.slice(0, separator)).trim().toLowerCase();
@@ -41,14 +42,14 @@ export function runCommand(
         case "focus": {
             const ids = splitIds(argument);
             if (ids.length > 0) {
-                timeline.focus(ids, animation);
+                focus(ids, animation);
             }
             return true;
         }
         case "focusselection": {
             const selection = timeline.getSelection();
             if (selection.length > 0) {
-                timeline.focus(selection, animation);
+                focus(selection.map(String), animation);
             }
             return true;
         }
