@@ -3,10 +3,10 @@
   "widgetName": "VisTimeline",
   "version": "2.0.0",
   "description": "Vis Timeline Mendix Pluggable Widget based on https://github.com/visjs/vis-timeline.",
-  "copyright": "JL 2026",
-  "author": "JL",
+  "copyright": "Stoneworx 2026",
+  "author": "Stoneworx",
   "engines": {
-    "node": ">=16"
+    "node": ">=20"
   },
   "license": "MIT",
   "config": {
