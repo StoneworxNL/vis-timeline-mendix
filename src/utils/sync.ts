@@ -5,7 +5,9 @@ import { VisId } from "./values";
 /**
  * Pushes only the rows that actually changed into a vis-timeline data set, and removes the ones that
  * disappeared from the Mendix data source. Every update triggers a redraw and interrupts whatever
- * the user is doing, so handing back untouched rows is not harmless. Returns the removed ids.
+ * the user is doing, so handing back untouched rows is not harmless. Rows the data set holds that
+ * Mendix never had, such as an item vis-timeline created itself when the user added one, are
+ * removed too. Returns the removed ids.
  */
 export function syncDataSet<T extends { id: VisId }>(
     dataSet: DataSet<T, "id">,
@@ -33,6 +35,13 @@ export function syncDataSet<T extends { id: VisId }>(
     for (const id of removed) {
         signatures.delete(id);
     }
+    const gone = new Set(removed);
+    for (const id of dataSet.getIds()) {
+        const key = String(id);
+        if (!seen.has(key) && !gone.has(key)) {
+            removed.push(key);
+        }
+    }
 
     if (removed.length > 0) {
         dataSet.remove(removed);
@@ -42,6 +51,21 @@ export function syncDataSet<T extends { id: VisId }>(
         (dataSet as DataSet<any, "id">).update(changed);
     }
     return removed;
+}
+
+/**
+ * A move, remove or add the user makes on the timeline changes vis-timeline's data set straight
+ * away, while Mendix may still turn it down. The signatures say the timeline already shows what
+ * Mendix has, so the next sync would leave a refused edit on screen. Forgetting the signatures of
+ * the edited rows makes the next sync put Mendix's version back. Returns whether there was any.
+ */
+export function forgetLocalEdits(edited: Set<VisId>, signatures: Map<VisId, string>): boolean {
+    if (edited.size === 0) {
+        return false;
+    }
+    edited.forEach(id => signatures.delete(id));
+    edited.clear();
+    return true;
 }
 
 /** Timeline has setCustomTimeMarker, but the bundled declarations only list it on Graph2d. */

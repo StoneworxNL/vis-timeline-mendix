@@ -57,6 +57,15 @@ describe("deepMerge", () => {
         expect(target).toEqual({ tooltip: { delay: 0, followMouse: false }, stack: true });
     });
 
+    it("never writes into Object.prototype", () => {
+        const source = JSON.parse('{"__proto__":{"polluted":1},"constructor":{"prototype":{"polluted":2}},"a":1}');
+        const target: Record<string, any> = {};
+        deepMerge(target, source);
+        expect(({} as any).polluted).toBeUndefined();
+        expect(Object.hasOwn(Object.prototype, "polluted")).toBe(false);
+        expect(target).toEqual({ a: 1 });
+    });
+
     it("replaces arrays and dates rather than merging into them", () => {
         const date = new Date("2024-01-01");
         const target: Record<string, any> = { list: [1, 2], when: new Date("2020-01-01") };

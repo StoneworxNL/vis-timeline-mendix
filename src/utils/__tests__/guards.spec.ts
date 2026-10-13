@@ -8,7 +8,7 @@ type MockedDataSet = DataSet<VisItem, "id"> & { update: jest.Mock; remove: jest.
 type MockedTimeline = Timeline & { redraw: jest.Mock; fit: jest.Mock; setWindow: jest.Mock };
 
 function fakeDataSet(): MockedDataSet {
-    return { update: jest.fn(), remove: jest.fn() } as unknown as MockedDataSet;
+    return { update: jest.fn(), remove: jest.fn(), getIds: jest.fn(() => []) } as unknown as MockedDataSet;
 }
 
 function fakeTimeline(fit: () => void = () => undefined): MockedTimeline {
@@ -115,6 +115,13 @@ describe("inScope", () => {
     it("accepts clicks on an item, including an item with id 0", () => {
         expect(inScope("item", { what: "item", item: "a" })).toBe(true);
         expect(inScope("item", { what: "item", item: 0 })).toBe(true);
+    });
+
+    // Regression: a marker click never reached On click / On double click with the default scope,
+    // so the add-on-double-click, remove-on-second-click marker example did nothing.
+    it("accepts clicks on a marker for actions that receive the marker id", () => {
+        expect(inScope("item", { what: "custom-time", item: null, customTime: "m1" }, true)).toBe(true);
+        expect(inScope("item", { what: "custom-time", item: null, customTime: "m1" })).toBe(false);
     });
 
     it("accepts every click for actions scoped to anywhere", () => {

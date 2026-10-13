@@ -14,10 +14,19 @@ import "vis-timeline/styles/vis-timeline-graph2d.min.css";
 
 import { VisTimelineContainerProps } from "../../typings/VisTimelineProps";
 import { buildGroups, buildItems, buildMarkers, focusWindow, VisGroup, VisItem, VisMarker } from "../utils/data";
-import { syncMarkers } from "../utils/sync";
+import { forgetLocalEdits, syncMarkers } from "../utils/sync";
 import { fitWithFallback, inScope, isSettled, syncWhenSettled } from "../utils/guards";
-import { fireAction, fireItemAction, idToString, readSelection, toBig, writeSelection } from "../utils/actions";
-import { buildStaticOptions } from "../utils/options";
+import { createInViewReporter } from "../utils/inView";
+import {
+    fireAction,
+    fireItemAction,
+    idToString,
+    isAnyRunning,
+    readSelection,
+    toBig,
+    writeSelection
+} from "../utils/actions";
+import { buildStaticOptions, optionsSignature } from "../utils/options";
 import { runCommand } from "../utils/commands";
 import { defaultSnap, resolveLocale, visMoment } from "../utils/vis";
 import { dynamicBoolean, dynamicText, sameIds, splitIds, toDate, VisId } from "../utils/values";
@@ -42,6 +51,9 @@ type ItemResolver = (id: VisId | undefined) => ObjectItem | undefined;
 
 const MS_PER_MINUTE = 60000;
 
+/** How long to wait after an edit action finished for Mendix to send the changed data. */
+const LOCAL_EDIT_SETTLE_MS = 1000;
+
 export function VisTimelineComponent(props: VisTimelineContainerProps): ReactElement {
     const containerRef = useRef<HTMLDivElement>(null);
     const timelineRef = useRef<Timeline | null>(null);
@@ -55,6 +67,9 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
     propsRef.current = props;
 
     const itemSignaturesRef = useRef(new Map<VisId, string>());
+    // Items the user moved, removed or added on the timeline that Mendix has not confirmed yet.
+    const localEditsRef = useRef(new Set<VisId>());
+    const localEditTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     const groupSignaturesRef = useRef(new Map<VisId, string>());
     const appliedMarkersRef = useRef(new Map<VisId, VisMarker>());
     const groupsAttachedRef = useRef(false);
@@ -99,7 +114,7 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
     const staticOptions = buildStaticOptions(props);
     const staticOptionsRef = useRef(staticOptions);
     staticOptionsRef.current = staticOptions;
-    const optionsSignature = JSON.stringify(staticOptions);
+    const signature = optionsSignature(props, staticOptions);
 
     const schedulePortalFlush = useCallback(() => {
         if (portalFlushScheduledRef.current) {
@@ -186,9 +201,15 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         }
     }, []);
 
+    const markLocalEdit = useCallback((id: unknown) => {
+        if (id != null) {
+            localEditsRef.current.add(String(id));
+        }
+    }, []);
+
     const functionOptions = useMemo(
-        () => buildFunctionOptions(propsRef, templateContainer, resolveItem),
-        [templateContainer, resolveItem]
+        () => buildFunctionOptions(propsRef, templateContainer, resolveItem, markLocalEdit),
+        [templateContainer, resolveItem, markLocalEdit]
     );
 
     // The timeline is created once. Options, data, markers, window and selection are pushed in by
@@ -211,7 +232,7 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
             return;
         }
         timelineRef.current = timeline;
-        registerEvents(timeline, propsRef, appliedSelectionRef, resolveItem);
+        const disposeEvents = registerEvents(timeline, propsRef, appliedSelectionRef, resolveItem);
         container.addEventListener("pointerup", placeCaretInMarkerLabel, true);
 
         // Custom time bars live on the timeline instance rather than in a data set, so they have to
@@ -224,21 +245,24 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
             hasFittedRef.current = false;
             appliedMarkers.clear();
             container.removeEventListener("pointerup", placeCaretInMarkerLabel, true);
+            // A pending "in view" report would otherwise ask the destroyed timeline and run the
+            // action after the user has left the page.
+            disposeEvents();
             timeline.destroy();
         };
     }, [functionOptions, resolveItem]);
 
     useEffect(() => {
         const isFirstRun = appliedOptionsRef.current === undefined;
-        appliedOptionsRef.current = optionsSignature;
+        appliedOptionsRef.current = signature;
         // The timeline was constructed with these options already; pushing them again would only
         // cost an extra redraw before the widget has even been laid out.
         if (!isFirstRun) {
             applyOptions(timelineRef.current, mergeOptions(staticOptionsRef.current, functionOptions));
         }
-        // staticOptionsRef always holds the newest options; optionsSignature says when they changed.
+        // staticOptionsRef always holds the newest options; the signature says when they changed.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [optionsSignature, functionOptions]);
+    }, [signature, functionOptions]);
 
     // Groups are synced before items so an item never refers to a group that does not exist yet.
     useEffect(() => {
@@ -276,17 +300,33 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
     const windowEnd = props.windowEnd?.value;
     const fitOnDataChange = props.fitOnDataChange;
 
+    const editActionRunning = isAnyRunning(
+        [props.moveAction, props.onRemoveAction, props.onAddAction],
+        [props.itemMoveAction, props.itemRemoveAction],
+        Array.from(localEditsRef.current, id => resolveItem(id)).filter(isObjectItem)
+    );
+    const editActionRunningRef = useRef(editActionRunning);
+    editActionRunningRef.current = editActionRunning;
+
+    const syncItems = useCallback((): VisId[] | undefined => {
+        // Once the edit actions are done, whatever Mendix has wins over what the user dropped.
+        if (!editActionRunningRef.current && forgetLocalEdits(localEditsRef.current, itemSignaturesRef.current)) {
+            clearTimeout(localEditTimerRef.current);
+        }
+        return syncWhenSettled(
+            propsRef.current.VisItemsDataSource,
+            itemsDataSetRef.current,
+            itemsRef.current,
+            itemSignaturesRef.current
+        );
+    }, []);
+
     useEffect(() => {
         const timeline = timelineRef.current;
         if (!timeline) {
             return;
         }
-        const removed = syncWhenSettled(
-            propsRef.current.VisItemsDataSource,
-            itemsDataSetRef.current,
-            items,
-            itemSignaturesRef.current
-        );
+        const removed = syncItems();
         if (!removed) {
             return;
         }
@@ -309,9 +349,43 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         // previous version did - produces a window that is orders of magnitude too wide.
         cancelAnimationFrame(pendingFitRef.current);
         pendingFitRef.current = requestAnimationFrame(() => fitToItems(fitAnimation));
-    }, [items, itemsSettled, dropContainers, animation, fitToItems, fitOnDataChange, windowStart, windowEnd]);
+    }, [
+        items,
+        itemsSettled,
+        syncItems,
+        dropContainers,
+        animation,
+        fitToItems,
+        fitOnDataChange,
+        windowStart,
+        windowEnd
+    ]);
 
-    useEffect(() => () => cancelAnimationFrame(pendingFitRef.current), []);
+    // A refused edit leaves the Mendix data as it was, so no new data arrives to put the item back.
+    // Once the edit actions have finished, Mendix gets a moment to send what it changed; whatever
+    // is still unconfirmed after that goes back to what Mendix has.
+    useEffect(() => {
+        if (editActionRunning || localEditsRef.current.size === 0) {
+            return;
+        }
+        clearTimeout(localEditTimerRef.current);
+        localEditTimerRef.current = setTimeout(() => {
+            if (timelineRef.current) {
+                const removed = syncItems();
+                if (removed) {
+                    dropContainers(["item", "frame", "tooltip"], removed);
+                }
+            }
+        }, LOCAL_EDIT_SETTLE_MS);
+    }, [editActionRunning, syncItems, dropContainers]);
+
+    useEffect(
+        () => () => {
+            cancelAnimationFrame(pendingFitRef.current);
+            clearTimeout(localEditTimerRef.current);
+        },
+        []
+    );
 
     useEffect(registerDragSources, []);
 
@@ -571,7 +645,8 @@ function mergeOptions(staticOptions: TimelineOptions, functionOptions: TimelineO
 function buildFunctionOptions(
     propsRef: PropsRef,
     templateContainer: (kind: TemplateKind, objectId: VisId) => HTMLElement,
-    resolveItem: ItemResolver
+    resolveItem: ItemResolver,
+    markLocalEdit: (id: unknown) => void
 ): TimelineOptions {
     const options: TimelineOptions = {
         template: (item?: any) =>
@@ -613,6 +688,9 @@ function buildFunctionOptions(
                 addedGroupID: idToString(item?.group),
                 addedContent: typeof item?.content === "string" ? item.content : undefined
             });
+            if (props.addMode === "addAndCallAction") {
+                markLocalEdit(item?.id);
+            }
             callback(props.addMode === "addAndCallAction" ? item : null);
         },
         // vis-timeline expects the edited item back from onUpdate. A Mendix action cannot answer
@@ -639,6 +717,9 @@ function buildFunctionOptions(
                 newEnd: toDate(item?.end),
                 newGroupID: idToString(item?.group)
             });
+            if (props.moveMode === "moveAndCallAction") {
+                markLocalEdit(item?.id);
+            }
             callback(props.moveMode === "moveAndCallAction" ? item : null);
         },
         onMoving: (item: any, callback: (item: any) => void) => {
@@ -657,6 +738,9 @@ function buildFunctionOptions(
                 removedItemID: idToString(item?.id)
             });
             fireItemAction(props.itemRemoveAction, resolveItem(idToString(item?.id)));
+            if (props.removeMode === "removeAndCallAction") {
+                markLocalEdit(item?.id);
+            }
             callback(props.removeMode === "removeAndCallAction" ? item : null);
         },
         onAddGroup: (group: any, callback: (group: any) => void) => {
@@ -718,7 +802,7 @@ function registerEvents(
     propsRef: PropsRef,
     appliedSelectionRef: { current: VisId[] },
     resolveItem: ItemResolver
-): void {
+): () => void {
     // Editable items emit a second, reduced `click` and `doubleClick` payload that has no `what`
     // key. Ignoring those is what keeps a microflow from running twice on a single click.
     const isPrimary = (properties: any): boolean => properties != null && "what" in properties;
@@ -728,7 +812,7 @@ function registerEvents(
         if (!isPrimary(properties)) {
             return;
         }
-        if (inScope(props.clickScope, properties)) {
+        if (inScope(props.clickScope, properties, true)) {
             fireAction(props.clickAction, {
                 clickedItemID: idToString(properties.item),
                 clickedGroupID: idToString(properties.group),
@@ -745,7 +829,7 @@ function registerEvents(
         if (!isPrimary(properties)) {
             return;
         }
-        if (inScope(props.doubleClickScope, properties)) {
+        if (inScope(props.doubleClickScope, properties, true)) {
             fireAction(props.doubleClickAction, {
                 doubleClickedItemID: idToString(properties.item),
                 doubleClickedGroupID: idToString(properties.group),
@@ -824,31 +908,13 @@ function registerEvents(
         })
     );
 
-    // vis-timeline has no event for "what is in view changed", so it is worked out after every window
-    // change, scroll and redraw. Only an actual change reaches Mendix, which also keeps a microflow that
-    // changes the page from triggering itself again.
-    let lastInView = "";
-    let inViewTimer: number | undefined;
-    const reportInView = (): void => {
-        window.clearTimeout(inViewTimer);
-        inViewTimer = window.setTimeout(() => {
-            const action = propsRef.current.visibleChangedAction;
-            if (!action) {
-                return;
-            }
-            const itemIds = timeline.getVisibleItems().map(String).join(",");
-            const groupIds = (
-                (timeline as unknown as { getVisibleGroups?: () => unknown[] }).getVisibleGroups?.() ?? []
-            )
-                .map(String)
-                .join(",");
-            if (itemIds + "|" + groupIds === lastInView) {
-                return;
-            }
-            lastInView = itemIds + "|" + groupIds;
-            fireAction(action, { visibleItemIDs: itemIds, visibleGroupIDs: groupIds });
-        }, 250);
-    };
+    const inView = createInViewReporter(
+        timeline,
+        (itemIds, groupIds) =>
+            fireAction(propsRef.current.visibleChangedAction, { visibleItemIDs: itemIds, visibleGroupIDs: groupIds }),
+        () => !!propsRef.current.visibleChangedAction
+    );
+    const reportInView = (): void => inView.report();
     timeline.on("rangechanged", reportInView);
     timeline.on("scrollSide", reportInView);
     timeline.on("changed", reportInView);
@@ -879,6 +945,8 @@ function registerEvents(
             movedMarkerTime: toDate(properties?.time)
         })
     );
+
+    return () => inView.dispose();
 }
 
 function htmlToText(html: unknown): string {

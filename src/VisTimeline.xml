@@ -1029,12 +1029,13 @@
                 <property key="clickScope" type="enumeration" defaultValue="item">
                     <caption>On click fires for</caption>
                     <description>
-                        Items only keeps the action from running when the user clicks empty space, the time axis or a
-                        group label, so it can count on an item ID being filled in. Anywhere reports those clicks as
-                        well, with an empty item ID and the kind of thing that was hit in the "what" variable.
+                        Items and markers keeps the action from running when the user clicks empty space, the time axis
+                        or a
+                        group label, so it can count on an item ID or a marker ID being filled in. Anywhere reports
+                        those clicks as well, with empty IDs and the kind of thing that was hit in the "what" variable.
                     </description>
                     <enumerationValues>
-                        <enumerationValue key="item">Items only</enumerationValue>
+                        <enumerationValue key="item">Items and markers</enumerationValue>
                         <enumerationValue key="anywhere">Anywhere on the timeline</enumerationValue>
                     </enumerationValues>
                 </property>
@@ -1052,13 +1053,13 @@
                 <property key="doubleClickScope" type="enumeration" defaultValue="item">
                     <caption>On double click fires for</caption>
                     <description>
-                        Items only keeps the action from running when the user double clicks empty space, the time axis
-                        or a
-                        group label, so it can count on an item ID being filled in. Anywhere reports those clicks as
-                        well, with an empty item ID and the kind of thing that was hit in the "what" variable.
+                        Items and markers keeps the action from running when the user double clicks empty space, the
+                        time axis
+                        or a group label, so it can count on an item ID or a marker ID being filled in. Anywhere reports
+                        those clicks as well, with empty IDs and the kind of thing that was hit in the "what" variable.
                     </description>
                     <enumerationValues>
-                        <enumerationValue key="item">Items only</enumerationValue>
+                        <enumerationValue key="item">Items and markers</enumerationValue>
                         <enumerationValue key="anywhere">Anywhere on the timeline</enumerationValue>
                     </enumerationValues>
                 </property>
@@ -1090,14 +1091,20 @@
                 </property>
                 <property key="itemOverAction" type="action" required="false">
                     <caption>On item hover</caption>
-                    <description>Triggered when the mouse enters an item.</description>
+                    <description>
+                        Triggered when the mouse enters an item. Use a nanoflow: this runs often, and a run that starts
+                        while the previous one is still busy is skipped.
+                    </description>
                     <actionVariables>
                         <actionVariable key="hoveredItemID" type="String" caption="Hovered item ID" />
                     </actionVariables>
                 </property>
                 <property key="itemOutAction" type="action" required="false">
                     <caption>On item hover out</caption>
-                    <description>Triggered when the mouse leaves an item.</description>
+                    <description>
+                        Triggered when the mouse leaves an item. Use a nanoflow: this runs often, and a run that starts
+                        while the previous one is still busy is skipped.
+                    </description>
                     <actionVariables>
                         <actionVariable key="unhoveredItemID" type="String" caption="Unhovered item ID" />
                     </actionVariables>
@@ -1181,7 +1188,8 @@
                     <caption>On items in view changed</caption>
                     <description>
                         Triggered when the items or groups inside the visible window change, after moving, zooming,
-                        scrolling or a data change.
+                        scrolling or a data change. Use a nanoflow: this runs often, and a run that starts while the
+                        previous one is still busy is skipped.
                     </description>
                     <actionVariables>
                         <actionVariable key="visibleItemIDs" type="String" caption="Item IDs in view" />
@@ -1194,7 +1202,10 @@
                 </property>
                 <property key="markerChangeAction" type="action" required="false">
                     <caption>On marker moving</caption>
-                    <description>Triggered continuously while a marker is dragged.</description>
+                    <description>
+                        Triggered continuously while a marker is dragged. Use a nanoflow: this runs often, and a run
+                        that starts while the previous one is still busy is skipped.
+                    </description>
                     <actionVariables>
                         <actionVariable key="movingMarkerID" type="String" caption="Marker ID" />
                         <actionVariable key="movingMarkerTime" type="DateTime" caption="Marker time" />
@@ -1210,7 +1221,10 @@
                 </property>
                 <property key="markerLabelChangingAction" type="action" required="false">
                     <caption>On marker label changing</caption>
-                    <description>Triggered on every keystroke while an editable marker label is typed in.</description>
+                    <description>
+                        Triggered on every keystroke while an editable marker label is typed in. Use a nanoflow: this
+                        runs often, and a run that starts while the previous one is still busy is skipped.
+                    </description>
                     <actionVariables>
                         <actionVariable key="changingMarkerID" type="String" caption="Marker ID" />
                         <actionVariable key="changingMarkerLabel" type="String" caption="Marker label" />
@@ -1218,7 +1232,9 @@
                 </property>
                 <property key="markerLabelChangedAction" type="action" required="false">
                     <caption>On marker label changed</caption>
-                    <description>Triggered when the user leaves an editable marker label after changing it.</description>
+                    <description>
+                        Triggered when the user leaves an editable marker label after changing it.
+                    </description>
                     <actionVariables>
                         <actionVariable key="changedMarkerID" type="String" caption="Marker ID" />
                         <actionVariable key="changedMarkerLabel" type="String" caption="Marker label" />
@@ -1260,8 +1276,8 @@
                 <property key="movingAction" type="action" required="false">
                     <caption>On moving</caption>
                     <description>
-                        Triggered continuously while an item is being dragged. Use a nanoflow, this fires on every mouse
-                        move.
+                        Triggered continuously while an item is being dragged. Use a nanoflow: this runs often, and a
+                        run that starts while the previous one is still busy is skipped.
                     </description>
                     <actionVariables>
                         <actionVariable key="movingItemID" type="String" caption="Item ID" />

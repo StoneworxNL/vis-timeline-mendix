@@ -24,6 +24,18 @@ export function fireItemAction(
     }
 }
 
+/** Whether any of the actions is still running, the bound ones for any of the given rows. */
+export function isAnyRunning(
+    actions: Array<ActionValue<any> | undefined>,
+    listActions: Array<ListActionValue<any> | undefined>,
+    objects: ObjectItem[]
+): boolean {
+    return (
+        actions.some(action => action?.isExecuting) ||
+        listActions.some(action => action && objects.some(object => action.get(object).isExecuting))
+    );
+}
+
 /** Mirrors a selection made on the timeline into the Mendix selection property. */
 export function writeSelection(selection: VisTimelineContainerProps["itemSelection"], objects: ObjectItem[]): void {
     if (!selection) {

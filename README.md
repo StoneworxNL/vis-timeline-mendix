@@ -168,6 +168,16 @@ rebuilt from Mendix data, so the caret stays put while those actions run.
 **On click** and **On double click** also report the id of the marker that was hit, which is what the vis-timeline
 example of adding a marker on double click and removing it on a second double click needs.
 
+## Security
+
+-   **Every action variable is client input.** Item and group IDs, dates, `data`, `droppedData` and `addedContent` come
+    from the browser and can be crafted, and **On drop** accepts text dragged in from any site. Microflows must check
+    access and validate these values, and never commit straight from them. Prefer the actions under **Events → Item**,
+    which receive the Mendix object itself.
+-   **XSS protection** is on unless the **Disable XSS protection** property turns it off. `xss` in **Extra options
+    (JSON)** is ignored, so the JSON cannot switch it off behind the property's back.
+-   **Extra options (JSON)** never merges `__proto__`, `constructor` or `prototype` keys.
+
 ## Upgrading from the first version
 
 The property keys of the first version are all still there, so existing pages keep their mappings. Three behaviours did

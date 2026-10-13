@@ -1,13 +1,13 @@
 import { DataSet, Timeline } from "vis-timeline/standalone";
 import { VisItem, VisMarker } from "../data";
-import { syncDataSet, syncMarkers } from "../sync";
+import { forgetLocalEdits, syncDataSet, syncMarkers } from "../sync";
 import { VisId } from "../values";
 
 type MockedDataSet = DataSet<VisItem, "id"> & Record<string, jest.Mock>;
 type MockedTimeline = Timeline & Record<string, jest.Mock>;
 
 function fakeDataSet(): MockedDataSet {
-    return { update: jest.fn(), remove: jest.fn() } as unknown as MockedDataSet;
+    return { update: jest.fn(), remove: jest.fn(), getIds: jest.fn(() => []) } as unknown as MockedDataSet;
 }
 
 function item(id: string, content: string, end?: string): VisItem {
@@ -195,5 +195,78 @@ describe("syncMarkers", () => {
             expect(timeline.setCustomTimeMarker).toHaveBeenCalledWith("Go li", "a", true);
             bar.remove();
         });
+    });
+});
+
+describe("syncDataSet against what the timeline holds", () => {
+    function timelineData(): DataSet<VisItem, "id"> {
+        return new DataSet<VisItem, "id">();
+    }
+
+    it("removes items the timeline created itself that Mendix does not have", () => {
+        const dataSet = timelineData();
+        const signatures = new Map<VisId, string>();
+        syncDataSet(dataSet, [item("1", "a")], signatures);
+        // What vis-timeline does when the user adds an item with "add and call action".
+        dataSet.add({ id: "6f1c-uuid", content: "new item", start: new Date() } as VisItem);
+
+        const removed = syncDataSet(dataSet, [item("1", "a"), item("2", "created by the microflow")], signatures);
+
+        expect(removed).toEqual(["6f1c-uuid"]);
+        expect(dataSet.getIds().sort()).toEqual(["1", "2"]);
+    });
+});
+
+describe("forgetLocalEdits", () => {
+    const start = new Date("2024-05-01T00:00:00Z");
+    const moved = new Date("2024-06-01T00:00:00Z");
+
+    function setUp(): { dataSet: DataSet<VisItem, "id">; signatures: Map<VisId, string>; rows: VisItem[] } {
+        const dataSet = new DataSet<VisItem, "id">();
+        const signatures = new Map<VisId, string>();
+        const rows = [item("1", "a"), item("2", "b")];
+        syncDataSet(dataSet, rows, signatures);
+        return { dataSet, signatures, rows };
+    }
+
+    it("puts a refused move back where Mendix has it", () => {
+        const { dataSet, signatures, rows } = setUp();
+        dataSet.update({ id: "1", start: moved } as VisItem);
+        const edited = new Set<VisId>(["1"]);
+
+        // Without forgetting, the unchanged Mendix data leaves the item where it was dropped.
+        syncDataSet(dataSet, rows, signatures);
+        expect(dataSet.get("1")!.start).toEqual(moved);
+
+        expect(forgetLocalEdits(edited, signatures)).toBe(true);
+        syncDataSet(dataSet, rows, signatures);
+        expect(dataSet.get("1")!.start).toEqual(start);
+        expect(edited.size).toBe(0);
+    });
+
+    it("brings back an item whose removal Mendix refused", () => {
+        const { dataSet, signatures, rows } = setUp();
+        dataSet.remove("2");
+
+        forgetLocalEdits(new Set<VisId>(["2"]), signatures);
+        syncDataSet(dataSet, rows, signatures);
+
+        expect(dataSet.get("2")).toEqual(expect.objectContaining({ id: "2", content: "b" }));
+    });
+
+    it("keeps a removal Mendix accepted", () => {
+        const { dataSet, signatures, rows } = setUp();
+        dataSet.remove("2");
+
+        forgetLocalEdits(new Set<VisId>(["2"]), signatures);
+        syncDataSet(dataSet, [rows[0]], signatures);
+
+        expect(dataSet.getIds()).toEqual(["1"]);
+    });
+
+    it("does nothing when there are no edits", () => {
+        const signatures = new Map<VisId, string>([["1", "x"]]);
+        expect(forgetLocalEdits(new Set(), signatures)).toBe(false);
+        expect(signatures.size).toBe(1);
     });
 });

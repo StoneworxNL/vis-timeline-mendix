@@ -58,8 +58,9 @@ export function fitWithFallback(
 /**
  * Clicking the background, the time axis or a group label is still a click as far as vis-timeline
  * is concerned. Reporting those to an action that expects an item id is what the scope settings
- * guard against.
+ * guard against. For actions that receive a marker id (`markers`), a click on a marker counts as a
+ * hit too; that is what lets a page add a marker on double click and remove it on a second one.
  */
-export function inScope(scope: "item" | "anywhere", properties: any): boolean {
-    return scope === "anywhere" || properties?.item != null;
+export function inScope(scope: "item" | "anywhere", properties: any, markers = false): boolean {
+    return scope === "anywhere" || properties?.item != null || (markers && properties?.customTime != null);
 }

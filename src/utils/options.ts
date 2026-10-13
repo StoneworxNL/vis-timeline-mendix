@@ -151,10 +151,29 @@ export function buildStaticOptions(props: VisTimelineContainerProps): TimelineOp
 
     const extra = parseJsonObject(dynamicText(props.optionsJson), "Extra options (JSON)");
     if (extra) {
+        // Turning off XSS protection sends item, group, tooltip and marker content to innerHTML
+        // unfiltered, so only the explicit property may do it.
+        if ("xss" in extra) {
+            console.warn('VisTimeline: "xss" is ignored in Extra options (JSON), use the XSS protection property.');
+            delete extra.xss;
+        }
         deepMerge(options as Record<string, unknown>, extra);
     }
 
     return options;
+}
+
+/**
+ * Says when the static options changed. The label formats and the order are handed to vis-timeline
+ * as functions, which JSON.stringify leaves out, so the values they are built from are added.
+ */
+export function optionsSignature(props: VisTimelineContainerProps, options: TimelineOptions): string {
+    return JSON.stringify([
+        options,
+        dynamicText(props.formatMinorLabels) ?? null,
+        dynamicText(props.formatMajorLabels) ?? null,
+        typeof options.order === "function"
+    ]);
 }
 
 function assignIfDefined<K extends keyof TimelineOptions>(

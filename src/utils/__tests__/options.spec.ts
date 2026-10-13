@@ -1,4 +1,4 @@
-import { buildStaticOptions } from "../options";
+import { buildStaticOptions, optionsSignature } from "../options";
 import { attribute, containerProps, dateAttribute, dynamic, listValue, Row } from "../testUtils";
 
 /** Stands in for a moment instance: formatting returns the format string itself. */
@@ -154,6 +154,23 @@ describe("buildStaticOptions", () => {
         expect(options.unknownOption).toBe(1);
     });
 
+    it("keeps XSS protection out of the JSON escape hatch's reach", () => {
+        const warn = jest.spyOn(console, "warn").mockImplementation();
+        const options = buildStaticOptions(
+            containerProps({ optionsJson: dynamic('{"xss":{"disabled":true},"stack":false}') } as any)
+        ) as any;
+        expect(options.xss).toEqual({ disabled: false });
+        expect(options.stack).toBe(false);
+        expect(warn).toHaveBeenCalled();
+        warn.mockRestore();
+    });
+
+    it("lets the explicit property turn XSS protection off", () => {
+        expect((buildStaticOptions(containerProps({ xssDisabled: true } as any)) as any).xss).toEqual({
+            disabled: true
+        });
+    });
+
     it("survives a JSON escape hatch that is not an object", () => {
         const warn = jest.spyOn(console, "warn").mockImplementation();
         expect(() => buildStaticOptions(containerProps({ optionsJson: dynamic("nope") } as any))).not.toThrow();
@@ -170,5 +187,23 @@ describe("buildStaticOptions", () => {
         );
         expect(options.zoomMax).toBe(315360000000000);
         expect((options.rollingMode as any).offset).toBe(0.25);
+    });
+});
+
+describe("optionsSignature", () => {
+    // Label formats reach vis-timeline as functions, which JSON.stringify leaves out.
+    it("changes when a label format changes at runtime", () => {
+        const before = containerProps({ formatMinorLabels: dynamic('{"day":"D"}') } as any);
+        const after = containerProps({ formatMinorLabels: dynamic('{"day":"ddd D"}') } as any);
+        expect(optionsSignature(before, buildStaticOptions(before))).not.toEqual(
+            optionsSignature(after, buildStaticOptions(after))
+        );
+    });
+
+    it("stays the same when nothing changed", () => {
+        const props = containerProps({ formatMajorLabels: dynamic('{"month":"MMMM"}') } as any);
+        expect(optionsSignature(props, buildStaticOptions(props))).toEqual(
+            optionsSignature(props, buildStaticOptions(props))
+        );
     });
 });

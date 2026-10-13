@@ -78,10 +78,17 @@ export function parseJsonObject(raw: string | undefined, propertyName: string): 
     return undefined;
 }
 
+const UNSAFE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
 /** Recursively merges `source` into `target`, so the JSON escape hatch can override a single
  *  nested option (for example `tooltip.delay`) without dropping its siblings. */
 export function deepMerge<T extends Record<string, any>>(target: T, source: Record<string, unknown>): T {
     for (const [key, value] of Object.entries(source)) {
+        // JSON.parse keeps "__proto__" as an own key; merging it would write into Object.prototype
+        // for the whole Mendix client.
+        if (UNSAFE_KEYS.has(key)) {
+            continue;
+        }
         const current = target[key];
         if (isPlainObject(value) && isPlainObject(current)) {
             deepMerge(current, value);
