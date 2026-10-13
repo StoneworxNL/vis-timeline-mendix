@@ -20,6 +20,7 @@ import { createInViewReporter } from "../utils/inView";
 import { registerDragSources } from "../utils/dragSources";
 import {
     addActionArgs,
+    awaitsConfirmation,
     fireAction,
     fireItemAction,
     idToString,
@@ -655,7 +656,7 @@ function buildFunctionOptions(
         onAdd: (item: any, callback: (item: any) => void) => {
             const props = propsRef.current;
             fireAction(props.onAddAction, addActionArgs(item));
-            if (props.addMode === "addAndCallAction") {
+            if (awaitsConfirmation(props, "add")) {
                 markLocalEdit(item?.id);
             }
             callback(props.addMode === "addAndCallAction" ? item : null);
@@ -684,7 +685,7 @@ function buildFunctionOptions(
                 newEnd: toDate(item?.end),
                 newGroupID: idToString(item?.group)
             });
-            if (props.moveMode === "moveAndCallAction") {
+            if (awaitsConfirmation(props, "move")) {
                 markLocalEdit(item?.id);
             }
             callback(props.moveMode === "moveAndCallAction" ? item : null);
@@ -705,7 +706,7 @@ function buildFunctionOptions(
                 removedItemID: idToString(item?.id)
             });
             fireItemAction(props.itemRemoveAction, resolveItem(idToString(item?.id)));
-            if (props.removeMode === "removeAndCallAction") {
+            if (awaitsConfirmation(props, "remove")) {
                 markLocalEdit(item?.id);
             }
             callback(props.removeMode === "removeAndCallAction" ? item : null);

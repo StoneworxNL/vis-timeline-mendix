@@ -1,6 +1,14 @@
 import { Big } from "big.js";
 import { ActionValue, ListActionValue, ObjectItem } from "mendix";
-import { fireAction, fireItemAction, idToString, readSelection, toBig, writeSelection } from "../actions";
+import {
+    awaitsConfirmation,
+    fireAction,
+    fireItemAction,
+    idToString,
+    readSelection,
+    toBig,
+    writeSelection
+} from "../actions";
 
 const object = (id: string): ObjectItem => ({ id } as unknown as ObjectItem);
 
@@ -104,5 +112,38 @@ describe("idToString and toBig", () => {
         expect(toBig(undefined)).toBeUndefined();
         expect(toBig({})).toBeUndefined();
         expect(toBig("not a number")).toBeUndefined();
+    });
+});
+
+describe("awaitsConfirmation", () => {
+    const listAction = {} as ListActionValue<any>;
+    const keep = {
+        addMode: "addAndCallAction",
+        moveMode: "moveAndCallAction",
+        removeMode: "removeAndCallAction"
+    } as const;
+
+    // Regression: on a page that keeps moves on screen but binds no move action, adding an item
+    // put every earlier move back once On add had finished.
+    it("does not wait for a confirmation no action is bound to give", () => {
+        expect(awaitsConfirmation({ ...keep, onAddAction: action() }, "move")).toBe(false);
+        expect(awaitsConfirmation({ ...keep, moveAction: action() }, "add")).toBe(false);
+        expect(awaitsConfirmation({ ...keep, onAddAction: action() }, "remove")).toBe(false);
+    });
+
+    it("waits for a bound action, either the plain or the per-item one", () => {
+        expect(awaitsConfirmation({ ...keep, onAddAction: action() }, "add")).toBe(true);
+        expect(awaitsConfirmation({ ...keep, moveAction: action() }, "move")).toBe(true);
+        expect(awaitsConfirmation({ ...keep, itemMoveAction: listAction }, "move")).toBe(true);
+        expect(awaitsConfirmation({ ...keep, onRemoveAction: action() }, "remove")).toBe(true);
+        expect(awaitsConfirmation({ ...keep, itemRemoveAction: listAction }, "remove")).toBe(true);
+    });
+
+    it("does not wait when the timeline reverts the edit itself", () => {
+        const revert = { addMode: "callAction", moveMode: "callAction", removeMode: "callAction" } as const;
+        const bound = { onAddAction: action(), moveAction: action(), onRemoveAction: action() };
+        expect(awaitsConfirmation({ ...revert, ...bound }, "add")).toBe(false);
+        expect(awaitsConfirmation({ ...revert, ...bound }, "move")).toBe(false);
+        expect(awaitsConfirmation({ ...revert, ...bound }, "remove")).toBe(false);
     });
 });

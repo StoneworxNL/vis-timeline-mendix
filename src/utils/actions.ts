@@ -36,6 +36,41 @@ export function addActionArgs(item: any): Record<string, unknown> {
     };
 }
 
+/**
+ * Whether an edit the timeline keeps on screen (the ...AndCallAction modes) waits for Mendix to
+ * confirm it. That is only the case when an action is bound to hear about it: with none, nothing
+ * would ever confirm the edit, and it would be undone as soon as any other edit action finished.
+ */
+export function awaitsConfirmation(
+    props: Pick<
+        VisTimelineContainerProps,
+        | "addMode"
+        | "moveMode"
+        | "removeMode"
+        | "onAddAction"
+        | "moveAction"
+        | "itemMoveAction"
+        | "onRemoveAction"
+        | "itemRemoveAction"
+    >,
+    edit: "add" | "move" | "remove"
+): boolean {
+    switch (edit) {
+        case "add":
+            return props.addMode === "addAndCallAction" && props.onAddAction !== undefined;
+        case "move":
+            return (
+                props.moveMode === "moveAndCallAction" &&
+                (props.moveAction !== undefined || props.itemMoveAction !== undefined)
+            );
+        case "remove":
+            return (
+                props.removeMode === "removeAndCallAction" &&
+                (props.onRemoveAction !== undefined || props.itemRemoveAction !== undefined)
+            );
+    }
+}
+
 /** Whether any of the actions is still running, the bound ones for any of the given rows. */
 export function isAnyRunning(
     actions: Array<ActionValue<any> | undefined>,
