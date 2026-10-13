@@ -17,7 +17,9 @@ import { buildGroups, buildItems, buildMarkers, focusWindow, VisGroup, VisItem, 
 import { forgetLocalEdits, syncMarkers } from "../utils/sync";
 import { fitWithFallback, inScope, isSettled, syncWhenSettled } from "../utils/guards";
 import { createInViewReporter } from "../utils/inView";
+import { registerDragSources } from "../utils/dragSources";
 import {
+    addActionArgs,
     fireAction,
     fireItemAction,
     idToString,
@@ -510,35 +512,6 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
 }
 
 /**
- * vis-timeline only accepts a drop that carries the item as JSON in the drag data, which a Mendix
- * page cannot set. Any element with a data-vis-timeline-item attribute (and draggable="true") is
- * therefore made a drag source here: its attribute value, for example {"content":"New item"}, is
- * handed over as the drag data. One listener serves every timeline on the page.
- */
-const DRAG_SOURCE_ATTRIBUTE = "data-vis-timeline-item";
-let dragSourceUsers = 0;
-
-function onDragStart(event: DragEvent): void {
-    const target = event.target instanceof Element ? event.target : null;
-    const json = target?.closest(`[${DRAG_SOURCE_ATTRIBUTE}]`)?.getAttribute(DRAG_SOURCE_ATTRIBUTE);
-    if (json && event.dataTransfer) {
-        event.dataTransfer.effectAllowed = "move";
-        event.dataTransfer.setData("text", json);
-    }
-}
-
-function registerDragSources(): () => void {
-    if (dragSourceUsers++ === 0) {
-        document.addEventListener("dragstart", onDragStart);
-    }
-    return () => {
-        if (--dragSourceUsers === 0) {
-            document.removeEventListener("dragstart", onDragStart);
-        }
-    };
-}
-
-/**
  * vis-timeline focuses an editable marker label on pointerdown, but the drag handling on the time
  * bar keeps the browser from placing the caret, so typing always started at the beginning of the
  * label. The caret is put where the user clicked instead, unless they selected a piece of text.
@@ -681,13 +654,7 @@ function buildFunctionOptions(
         onInitialDrawComplete: () => fireAction(propsRef.current.onInitialDrawCompleteAction),
         onAdd: (item: any, callback: (item: any) => void) => {
             const props = propsRef.current;
-            fireAction(props.onAddAction, {
-                data: JSON.stringify(item),
-                addedStart: toDate(item?.start),
-                addedEnd: toDate(item?.end),
-                addedGroupID: idToString(item?.group),
-                addedContent: typeof item?.content === "string" ? item.content : undefined
-            });
+            fireAction(props.onAddAction, addActionArgs(item));
             if (props.addMode === "addAndCallAction") {
                 markLocalEdit(item?.id);
             }

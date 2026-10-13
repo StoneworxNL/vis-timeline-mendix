@@ -1,6 +1,7 @@
 import { Big } from "big.js";
 import { ActionValue, ListActionValue, ObjectItem } from "mendix";
 import { VisTimelineContainerProps } from "../../typings/VisTimelineProps";
+import { toDate } from "./values";
 
 /** Runs a Mendix action, unless the platform says it cannot run or is already running. */
 export function fireAction(action: ActionValue<any> | undefined, args?: Record<string, unknown>): void {
@@ -22,6 +23,17 @@ export function fireItemAction(
     if (action && object) {
         fireAction(action.get(object), args);
     }
+}
+
+/** The variables On add receives for an item the user created, by double click or by a drop. */
+export function addActionArgs(item: any): Record<string, unknown> {
+    return {
+        data: JSON.stringify(item),
+        addedStart: toDate(item?.start),
+        addedEnd: toDate(item?.end),
+        addedGroupID: idToString(item?.group),
+        addedContent: typeof item?.content === "string" ? item.content : undefined
+    };
 }
 
 /** Whether any of the actions is still running, the bound ones for any of the given rows. */
