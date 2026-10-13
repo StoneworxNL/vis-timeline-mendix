@@ -25,14 +25,14 @@ import {
     fireItemAction,
     idToString,
     isAnyRunning,
-    readSelection,
     toBig,
+    wantedSelection,
     writeSelection
 } from "../utils/actions";
-import { buildStaticOptions, optionsSignature } from "../utils/options";
+import { buildStaticOptions, optionsSignature, withClearedOptions } from "../utils/options";
 import { runCommand } from "../utils/commands";
 import { defaultSnap, resolveLocale, visMoment } from "../utils/vis";
-import { dynamicBoolean, dynamicText, sameIds, splitIds, toDate, VisId } from "../utils/values";
+import { dynamicBoolean, dynamicText, sameIds, toDate, VisId } from "../utils/values";
 
 type TemplateKind = "item" | "frame" | "tooltip" | "group";
 
@@ -83,6 +83,7 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
     const pendingFitRef = useRef(0);
     const warnedAboutFitRef = useRef(false);
     const appliedOptionsRef = useRef<string | undefined>(undefined);
+    const appliedStaticOptionsRef = useRef<TimelineOptions | undefined>(undefined);
 
     const containersRef = useRef(new Map<string, TemplateContainer>());
     const objectsRef = useRef<ObjectLookup>({ items: new Map(), groups: new Map() });
@@ -258,10 +259,16 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
     useEffect(() => {
         const isFirstRun = appliedOptionsRef.current === undefined;
         appliedOptionsRef.current = signature;
+        const { options, applied } = withClearedOptions(
+            propsRef.current,
+            appliedStaticOptionsRef.current,
+            staticOptionsRef.current
+        );
+        appliedStaticOptionsRef.current = applied;
         // The timeline was constructed with these options already; pushing them again would only
         // cost an extra redraw before the widget has even been laid out.
         if (!isFirstRun) {
-            applyOptions(timelineRef.current, mergeOptions(staticOptionsRef.current, functionOptions));
+            applyOptions(timelineRef.current, mergeOptions(options, functionOptions));
         }
         // staticOptionsRef always holds the newest options; the signature says when they changed.
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -422,22 +429,14 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
 
     // The selection can be driven either by the Mendix selection property, which deals in objects,
     // or by the comma separated attribute that came first. The selection property wins when both
-    // are configured, because it is the one the rest of the page can see.
-    const selectionFromMendix = useMemo<VisId[] | undefined>(() => {
-        const selection = props.itemSelection;
-        if (selection) {
-            const byObjectId = new Map<string, VisId>();
-            itemObjects.forEach((object, visId) => byObjectId.set(object.id, visId));
-            return readSelection(selection)
-                .map(object => byObjectId.get(object.id))
-                .filter(isVisId);
-        }
-        if (props.selectedItemIds?.status === "available") {
-            return splitIds(props.selectedItemIds.value);
-        }
-        return undefined;
+    // are configured, because it is the one the rest of the page can see. The items kept on screen
+    // while a data source refreshes are the ones matched against, so a refresh does not clear the
+    // selection, and an id that arrives before its item is applied once the item is there.
+    const selectionFromMendix = useMemo<VisId[] | undefined>(
+        () => wantedSelection(props.itemSelection, props.selectedItemIds, objectsRef.current.items),
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [props.itemSelection, props.selectedItemIds, itemObjects]);
+        [props.itemSelection, props.selectedItemIds, itemObjects]
+    );
 
     const selectionRef = useRef(selectionFromMendix);
     selectionRef.current = selectionFromMendix;
@@ -928,8 +927,4 @@ function htmlToText(html: unknown): string {
 
 function isObjectItem(object: ObjectItem | undefined): object is ObjectItem {
     return object !== undefined;
-}
-
-function isVisId(id: VisId | undefined): id is VisId {
-    return id !== undefined;
 }

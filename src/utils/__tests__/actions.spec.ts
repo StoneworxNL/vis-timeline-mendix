@@ -7,6 +7,7 @@ import {
     idToString,
     readSelection,
     toBig,
+    wantedSelection,
     writeSelection
 } from "../actions";
 
@@ -62,6 +63,29 @@ describe("readSelection", () => {
         expect(readSelection({ type: "Single", selection: undefined } as any)).toEqual([]);
         expect(readSelection({ type: "Multi", selection: [one] } as any)).toEqual([one]);
         expect(readSelection(undefined)).toEqual([]);
+    });
+});
+
+describe("wantedSelection", () => {
+    const items = new Map([
+        ["1", object("obj-1")],
+        ["2", object("obj-2")]
+    ]);
+
+    it("only asks for ids whose item the timeline has", () => {
+        const ids = { status: "available", value: "2, 7" } as any;
+        expect(wantedSelection(undefined, ids, items)).toEqual(["2"]);
+        expect(wantedSelection(undefined, ids, new Map())).toEqual([]);
+    });
+
+    it("maps the Selection property onto vis ids, and prefers it over the ids attribute", () => {
+        const selection = { type: "Multi", selection: [object("obj-2"), object("obj-9")] } as any;
+        expect(wantedSelection(selection, { status: "available", value: "1" } as any, items)).toEqual(["2"]);
+    });
+
+    it("leaves the selection alone when nothing drives it", () => {
+        expect(wantedSelection(undefined, undefined, items)).toBeUndefined();
+        expect(wantedSelection(undefined, { status: "loading", value: undefined } as any, items)).toBeUndefined();
     });
 });
 

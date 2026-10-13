@@ -176,6 +176,50 @@ export function optionsSignature(props: VisTimelineContainerProps, options: Time
     ]);
 }
 
+/**
+ * What vis-timeline falls back to for the options that are only handed over while they have a value.
+ * Its setOptions only copies the keys it is given, so leaving one out keeps the old value: a cleared
+ * Min date would keep limiting the window, and the last hidden period would stay hidden.
+ */
+const CLEARED_OPTIONS: Array<[string, unknown, (props: VisTimelineContainerProps) => { status: string } | undefined]> =
+    [
+        ["height", null, props => props.height],
+        ["minHeight", null, props => props.minHeight],
+        ["maxHeight", null, props => props.maxHeight],
+        ["width", "100%", props => props.width],
+        ["min", null, props => props.minDate],
+        ["max", null, props => props.maxDate],
+        ["zoomMin", 10, props => props.zoomMin],
+        ["zoomMax", 1000 * 60 * 60 * 24 * 365 * 10000, props => props.zoomMax],
+        ["hiddenDates", [], props => props.hiddenDatesDataSource]
+    ];
+
+/**
+ * Adds vis-timeline's own default for every option the previous options set and the next ones leave
+ * out. A value that is only missing because Mendix is still loading it keeps its previous value, so
+ * a refresh does not flash the limits or the hidden periods off. Returns the options to hand to
+ * vis-timeline, and the ones to compare the following change against.
+ */
+export function withClearedOptions(
+    props: VisTimelineContainerProps,
+    previous: TimelineOptions | undefined,
+    next: TimelineOptions
+): { options: TimelineOptions; applied: TimelineOptions } {
+    const options: Record<string, unknown> = { ...next };
+    const applied: Record<string, unknown> = { ...next };
+    for (const [key, value, source] of CLEARED_OPTIONS) {
+        if (!previous || !(key in previous) || key in next) {
+            continue;
+        }
+        if (source(props)?.status === "loading") {
+            options[key] = applied[key] = (previous as Record<string, unknown>)[key];
+        } else {
+            options[key] = value;
+        }
+    }
+    return { options: options as TimelineOptions, applied: applied as TimelineOptions };
+}
+
 function assignIfDefined<K extends keyof TimelineOptions>(
     options: TimelineOptions,
     key: K,

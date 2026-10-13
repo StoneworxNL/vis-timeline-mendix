@@ -1,4 +1,4 @@
-import { buildStaticOptions, optionsSignature } from "../options";
+import { buildStaticOptions, optionsSignature, withClearedOptions } from "../options";
 import { attribute, containerProps, dateAttribute, dynamic, listValue, Row } from "../testUtils";
 
 /** Stands in for a moment instance: formatting returns the format string itself. */
@@ -205,5 +205,38 @@ describe("optionsSignature", () => {
         expect(optionsSignature(props, buildStaticOptions(props))).toEqual(
             optionsSignature(props, buildStaticOptions(props))
         );
+    });
+});
+
+describe("withClearedOptions", () => {
+    const hidden = [{ start: new Date(2024, 0, 6), end: new Date(2024, 0, 8), repeat: "weekly" }];
+
+    it("hands nothing extra over the first time", () => {
+        const next = { stack: true };
+        expect(withClearedOptions(containerProps(), undefined, next)).toEqual({ options: next, applied: next });
+    });
+
+    it("resets an option that was set before and is now left out", () => {
+        const previous = { min: new Date(2024, 0, 1), zoomMin: 60000, hiddenDates: hidden } as any;
+        const { options, applied } = withClearedOptions(containerProps(), previous, { stack: true });
+        expect(options).toEqual({ stack: true, min: null, zoomMin: 10, hiddenDates: [] });
+        expect(applied).toEqual({ stack: true });
+    });
+
+    it("keeps the previous value while Mendix is still loading it", () => {
+        const props = containerProps({ hiddenDatesDataSource: listValue(undefined, "loading") } as any);
+        const { options, applied } = withClearedOptions(props, { hiddenDates: hidden } as any, {});
+        expect(options).toEqual({ hiddenDates: hidden });
+        expect(applied).toEqual({ hiddenDates: hidden });
+        // ...so the periods are still cleared when the refreshed data source turns out to be empty.
+        const settled = containerProps({ hiddenDatesDataSource: listValue([]) } as any);
+        expect(withClearedOptions(settled, applied, {}).options).toEqual({ hiddenDates: [] });
+    });
+
+    it("leaves an option that is still set to the new options", () => {
+        const max = new Date(2025, 0, 1);
+        expect(withClearedOptions(containerProps(), { max: new Date(2024, 0, 1) } as any, { max }).options).toEqual({
+            max
+        });
     });
 });

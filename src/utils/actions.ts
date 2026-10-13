@@ -1,7 +1,7 @@
 import { Big } from "big.js";
 import { ActionValue, ListActionValue, ObjectItem } from "mendix";
 import { VisTimelineContainerProps } from "../../typings/VisTimelineProps";
-import { toDate } from "./values";
+import { splitIds, toDate, VisId } from "./values";
 
 /** Runs a Mendix action, unless the platform says it cannot run or is already running. */
 export function fireAction(action: ActionValue<any> | undefined, args?: Record<string, unknown>): void {
@@ -108,6 +108,30 @@ export function readSelection(selection: VisTimelineContainerProps["itemSelectio
         return [];
     }
     return Array.isArray(chosen) ? chosen : [chosen];
+}
+
+/**
+ * The selection Mendix asks for, as vis ids, limited to the items the timeline has. vis-timeline
+ * drops an id it does not know, so an id asked for before its item has loaded would otherwise never
+ * be selected. The Selection property wins over the ids attribute; `undefined` means neither drives
+ * the selection.
+ */
+export function wantedSelection(
+    selection: VisTimelineContainerProps["itemSelection"],
+    idsAttribute: VisTimelineContainerProps["selectedItemIds"],
+    items: Map<VisId, ObjectItem>
+): VisId[] | undefined {
+    if (selection) {
+        const byObjectId = new Map<string, VisId>();
+        items.forEach((object, visId) => byObjectId.set(object.id, visId));
+        return readSelection(selection)
+            .map(object => byObjectId.get(object.id))
+            .filter((id): id is VisId => id !== undefined);
+    }
+    if (idsAttribute?.status === "available") {
+        return splitIds(idsAttribute.value).filter(id => items.has(id));
+    }
+    return undefined;
 }
 
 export function idToString(value: unknown): string | undefined {
