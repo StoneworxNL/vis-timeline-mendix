@@ -33,6 +33,9 @@ All notable changes to this widget are documented here. The format follows
     configured locale.
 -   The "in view" check no longer runs after the timeline is destroyed.
 -   Label formats changed at runtime are applied.
+-   `fit`, `focus`, `moveTo`, `setWindow` and the move commands leave rolling mode first instead of fighting it, and
+    zooming while rolling no longer stutters.
+-   Tooltips are no longer cut off at the edge of the timeline.
 
 ### Security
 

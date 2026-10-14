@@ -22,6 +22,16 @@ function fakeTimeline(
     } as unknown as MockedTimeline;
 }
 
+/** Gives the fake vis-timeline's rolling state, which toggleRollingMode flips. */
+function rolling(timeline: MockedTimeline): MockedTimeline {
+    const range = { rolling: true };
+    Object.assign(timeline, { range });
+    (timeline.toggleRollingMode as jest.Mock).mockImplementation(() => {
+        range.rolling = !range.rolling;
+    });
+    return timeline;
+}
+
 describe("runCommand", () => {
     it("is not case sensitive and tolerates padding", () => {
         const timeline = fakeTimeline();
@@ -109,6 +119,30 @@ describe("runCommand", () => {
             new Date("2024-05-01T00:00:00Z").getTime() + tenDays * 0.5
         );
         expect(timeline.moveTo).toHaveBeenCalledWith(new Date("2024-07-01T00:00:00Z"), animation);
+    });
+
+    it("leaves rolling mode before moving the window, so the two do not fight over it", () => {
+        const timeline = rolling(fakeTimeline());
+        const fit = jest.fn();
+        runCommand(timeline, "fit", animation, fit);
+        expect(timeline.toggleRollingMode).toHaveBeenCalledTimes(1);
+        expect(fit).toHaveBeenCalled();
+
+        const idle = fakeTimeline();
+        runCommand(idle, "moveTo:2024-07-01T00:00:00Z", animation, jest.fn());
+        expect(idle.toggleRollingMode).not.toHaveBeenCalled();
+    });
+
+    it("keeps rolling while zooming, without an animation the rolling steps would cut short", () => {
+        const animated: TimelineAnimationOptions = { animation: { duration: 500, easingFunction: "linear" } };
+        const timeline = rolling(fakeTimeline());
+        runCommand(timeline, "zoomIn", animated, jest.fn());
+        expect(timeline.toggleRollingMode).not.toHaveBeenCalled();
+        expect(timeline.zoomIn).toHaveBeenCalledWith(0.5, { animation: false });
+
+        const idle = fakeTimeline();
+        runCommand(idle, "zoomIn", animated, jest.fn());
+        expect(idle.zoomIn).toHaveBeenCalledWith(0.5, animated);
     });
 
     it("reports an unknown command rather than acting on it", () => {

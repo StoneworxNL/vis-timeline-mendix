@@ -17,6 +17,16 @@ export function runCommand(
     const name = (separator === -1 ? raw : raw.slice(0, separator)).trim().toLowerCase();
     const argument = separator === -1 ? "" : raw.slice(separator + 1).trim();
 
+    // Rolling mode re-centres the window on now many times a second, so a command that puts the
+    // window somewhere else would be undone straight away and the two would fight over it. Dragging
+    // the window by hand stops rolling mode in vis-timeline too.
+    if (NAVIGATING.has(name)) {
+        stopRolling(timeline);
+    }
+    // Zooming keeps rolling mode on, as the mouse wheel does, but an animated zoom would be cut
+    // short by every rolling step, so it is applied at once.
+    const zoomAnimation: TimelineAnimationOptions = isRolling(timeline) ? { animation: false } : animation;
+
     switch (name) {
         case "fit":
             fit(animation);
@@ -25,10 +35,10 @@ export function runCommand(
             timeline.redraw();
             return true;
         case "zoomin":
-            timeline.zoomIn(parseFloat(argument) || 0.5, animation);
+            timeline.zoomIn(parseFloat(argument) || 0.5, zoomAnimation);
             return true;
         case "zoomout":
-            timeline.zoomOut(parseFloat(argument) || 0.5, animation);
+            timeline.zoomOut(parseFloat(argument) || 0.5, zoomAnimation);
             return true;
         case "moveleft":
             moveWindow(timeline, -(parseFloat(argument) || 0.2), animation);
@@ -72,6 +82,20 @@ export function runCommand(
         default:
             console.warn(`VisTimeline: unknown command '${raw}'.`);
             return false;
+    }
+}
+
+/** The commands that put the window somewhere other than around the current time. */
+const NAVIGATING = new Set(["fit", "moveleft", "moveright", "focus", "focusselection", "moveto", "setwindow"]);
+
+/** vis-timeline keeps whether it is rolling on its range, which the type declarations leave out. */
+function isRolling(timeline: Timeline): boolean {
+    return (timeline as unknown as { range?: { rolling?: boolean } }).range?.rolling === true;
+}
+
+function stopRolling(timeline: Timeline): void {
+    if (isRolling(timeline)) {
+        timeline.toggleRollingMode();
     }
 }
 

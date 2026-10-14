@@ -8,6 +8,18 @@
     width: 100%;
 }
 
+/* vis-timeline appends its tooltip to the timeline root, which hides its overflow, so a tooltip
+   taller than the space above or below the item was cut off at the edge of the timeline. The
+   panels inside the root clip the items, axis and labels themselves, so the root can let the
+   tooltip out. */
+.vis-timeline-widget .vis-timeline {
+    overflow: visible;
+}
+
+.vis-timeline-widget .vis-tooltip {
+    z-index: 10;
+}
+
 /* Mendix widgets rendered inside an item, group label or tooltip live in a container element that
    vis-timeline owns. `display: contents` keeps that container out of the layout, so vis measures
    the widget content itself instead of an extra wrapper box. */
