@@ -33,108 +33,230 @@ export type Problem = {
     studioUrl?: string; // studio-specific link
 };
 
-type BaseProps = {
-    type: "Image" | "Container" | "RowLayout" | "Text" | "DropZone" | "Selectable" | "Datasource";
-    grow?: number; // optionally sets a growth factor if used in a layout (default = 1)
-};
+const DOCS_URL = "https://visjs.github.io/vis-timeline/docs/timeline/";
 
-type ImageProps = BaseProps & {
-    type: "Image";
-    document?: string; // svg image
-    data?: string; // base64 image
-    property?: object; // widget image property object from Values API
-    width?: number; // sets a fixed maximum width
-    height?: number; // sets a fixed maximum height
-};
+export function getProperties(values: VisTimelinePreviewProps, defaultProperties: Properties): Properties {
+    const hidden: string[] = [];
 
-type ContainerProps = BaseProps & {
-    type: "Container" | "RowLayout";
-    children: PreviewProps[]; // any other preview element
-    borders?: boolean; // sets borders around the layout to visually group its children
-    borderRadius?: number; // integer. Can be used to create rounded borders
-    backgroundColor?: string; // HTML color, formatted #RRGGBB
-    borderWidth?: number; // sets the border width
-    padding?: number; // integer. adds padding around the container
-};
-
-type RowLayoutProps = ContainerProps & {
-    type: "RowLayout";
-    columnSize?: "fixed" | "grow"; // default is fixed
-};
-
-type TextProps = BaseProps & {
-    type: "Text";
-    content: string; // text that should be shown
-    fontSize?: number; // sets the font size
-    fontColor?: string; // HTML color, formatted #RRGGBB
-    bold?: boolean;
-    italic?: boolean;
-};
-
-type DropZoneProps = BaseProps & {
-    type: "DropZone";
-    property: object; // widgets property object from Values API
-    placeholder: string; // text to be shown inside the dropzone when empty
-    showDataSourceHeader?: boolean; // true by default. Toggles whether to show a header containing information about the datasource
-};
-
-type SelectableProps = BaseProps & {
-    type: "Selectable";
-    object: object; // object property instance from the Value API
-    child: PreviewProps; // any type of preview property to visualize the object instance
-};
-
-type DatasourceProps = BaseProps & {
-    type: "Datasource";
-    property: object | null; // datasource property object from Values API
-    child?: PreviewProps; // any type of preview property component (optional)
-};
-
-export type PreviewProps =
-    | ImageProps
-    | ContainerProps
-    | RowLayoutProps
-    | TextProps
-    | DropZoneProps
-    | SelectableProps
-    | DatasourceProps;
-
-export function getProperties(
-    _values: VisTimelinePreviewProps,
-    defaultProperties: Properties /* , target: Platform*/
-): Properties {
-    // Do the values manipulation here to control the visibility of properties in Studio and Studio Pro conditionally.
-    /* Example
-    if (values.myProperty === "custom") {
-        delete defaultProperties.properties.myOtherProperty;
+    if (values.itemContentType === "attribute") {
+        hidden.push("itemContentWidgets");
+    } else {
+        hidden.push("ItemContent");
     }
-    */
+    if (values.groupContentType === "attribute") {
+        hidden.push("groupContentWidgets");
+    } else {
+        hidden.push("GroupContentAttr");
+    }
+    if (values.itemTooltipType !== "text") {
+        hidden.push("itemTitle");
+    }
+    if (values.itemTooltipType !== "custom") {
+        hidden.push("itemTooltipWidgets");
+    }
+    if (values.itemTooltipType === "none") {
+        hidden.push("tooltipFollowMouse", "tooltipOverflowMethod", "tooltipDelay");
+    }
+
+    if (!values.VisGroupsDataSource) {
+        hidden.push(
+            "GroupIDAttr",
+            "groupAssociation",
+            "treeLevel",
+            "groupContentType",
+            "GroupContentAttr",
+            "groupContentWidgets",
+            "groupTitle",
+            "GroupClassName",
+            "groupStyle",
+            "groupVisible",
+            "groupShowNested",
+            "GroupValue",
+            "groupOrderMode",
+            "groupSubgroupOrder",
+            "groupSubgroupStack",
+            "groupHeightMode"
+        );
+    }
+    if (!values.subgroupsDataSource) {
+        hidden.push("subgroupGroupId", "subgroupId", "subgroupVisible");
+    }
+    if (!values.markersDataSource) {
+        hidden.push("markerId", "markerTime", "markerTitle");
+    }
+    if (!values.hiddenDatesDataSource) {
+        hidden.push("hiddenDateStart", "hiddenDateEnd", "hiddenDateRepeat");
+    }
+
+    // A scope only means something once the action next to it is configured.
+    if (!values.clickAction) {
+        hidden.push("clickScope");
+    }
+    if (!values.doubleClickAction) {
+        hidden.push("doubleClickScope");
+    }
+    if (!values.contextMenuAction) {
+        hidden.push("contextMenuScope");
+    }
+
+    if (!values.clusterItems) {
+        hidden.push("clusterMaxItems", "clusterFitOnDoubleClick", "clusterShowStipes", "clusterTitleTemplate");
+    }
+    if (values.timeAxisScale === "auto") {
+        hidden.push("timeAxisStep");
+    }
+    if (!values.rollingMode) {
+        hidden.push("rollingModeOffset");
+    }
+    if (!values.selectable) {
+        hidden.push("multiselect", "multiselectPerGroup", "sequentialSelection", "focusOnSelection");
+    }
+    // Multi selection already implies it, so the switch would be a lie.
+    if (values.itemSelection === "Multi") {
+        hidden.push("multiselect");
+    }
+    if (!values.animateChanges) {
+        hidden.push("animationDuration", "animationEasing");
+    }
+    if (!values.zoomable) {
+        hidden.push("zoomKey", "zoomFriction", "preferZoom");
+    }
+
+    hideProperties(defaultProperties, hidden);
     return defaultProperties;
 }
 
-// export function check(_values: VisTimelinePreviewProps): Problem[] {
-//     const errors: Problem[] = [];
-//     // Add errors to the above array to throw errors in Studio and Studio Pro.
-//     /* Example
-//     if (values.myProperty !== "custom") {
-//         errors.push({
-//             property: `myProperty`,
-//             message: `The value of 'myProperty' is different of 'custom'.`,
-//             url: "https://github.com/myrepo/mywidget"
-//         });
-//     }
-//     */
-//     return errors;
-// }
+export function check(values: VisTimelinePreviewProps): Problem[] {
+    const problems: Problem[] = [];
 
-// export function getPreview(values: VisTimelinePreviewProps, isDarkMode: boolean, version: number[]): PreviewProps {
-//     // Customize your pluggable widget appearance for Studio Pro.
-//     return {
-//         type: "Container",
-//         children: []
-//     }
-// }
+    const requireWith = (
+        dataSource: unknown,
+        dataSourceName: string,
+        required: Array<[key: string, label: string]>
+    ): void => {
+        if (!dataSource) {
+            return;
+        }
+        for (const [key, label] of required) {
+            if (!values[key as keyof VisTimelinePreviewProps]) {
+                problems.push({
+                    property: key,
+                    message: `${label} is required when a ${dataSourceName} data source is configured.`
+                });
+            }
+        }
+    };
 
-// export function getCustomCaption(values: VisTimelinePreviewProps, platform: Platform): string {
-//     return "VisTimeline";
-// }
+    requireWith(values.VisGroupsDataSource, "groups", [["GroupIDAttr", "Group ID"]]);
+    requireWith(values.subgroupsDataSource, "subgroups", [
+        ["subgroupGroupId", "Subgroup: group ID"],
+        ["subgroupId", "Subgroup ID"],
+        ["subgroupVisible", "Subgroup visible"]
+    ]);
+    requireWith(values.markersDataSource, "markers", [
+        ["markerId", "Marker ID"],
+        ["markerTime", "Marker time"]
+    ]);
+    requireWith(values.hiddenDatesDataSource, "hidden periods", [
+        ["hiddenDateStart", "Hidden period start"],
+        ["hiddenDateEnd", "Hidden period end"]
+    ]);
+
+    if (values.VisGroupsDataSource && !values.ItemGroupID) {
+        problems.push({
+            property: "ItemGroupID",
+            severity: "warning",
+            message: "Without an Item Group ID every item ends up in the same, unnamed row."
+        });
+    }
+    if (values.itemContentType === "custom" && values.itemContentWidgets?.widgetCount === 0) {
+        problems.push({
+            property: "itemContentWidgets",
+            severity: "warning",
+            message: "Content type is Custom but no widgets have been placed, so the items will render empty."
+        });
+    }
+    if (values.groupContentType === "custom" && values.groupContentWidgets?.widgetCount === 0) {
+        problems.push({
+            property: "groupContentWidgets",
+            severity: "warning",
+            message:
+                "Group content type is Custom but no widgets have been placed, so the group labels will render empty."
+        });
+    }
+    if (values.itemTooltipType === "custom" && values.itemTooltipWidgets?.widgetCount === 0) {
+        problems.push({
+            property: "itemTooltipWidgets",
+            severity: "warning",
+            message: "Tooltip type is Custom but no widgets have been placed, so no tooltip will be shown."
+        });
+    }
+    if (values.groupOrderMode === "value" && !values.GroupValue) {
+        problems.push({
+            property: "GroupValue",
+            message: "Group order is set to Order value, so an Order value attribute has to be selected."
+        });
+    }
+    if (values.groupEditableOrder && values.groupEditableOrder !== "false" && values.groupOrderMode !== "value") {
+        problems.push({
+            property: "groupOrderMode",
+            severity: "warning",
+            message: "Reordering groups by dragging only persists when Group order is set to Order value.",
+            url: DOCS_URL
+        });
+    }
+    if (values.verticalScroll && !values.maxHeight) {
+        problems.push({
+            property: "maxHeight",
+            severity: "warning",
+            message: "Vertical scrolling only has an effect when a maximum height is set."
+        });
+    }
+    if (values.xssDisabled) {
+        problems.push({
+            property: "xssDisabled",
+            severity: "warning",
+            message:
+                "XSS protection is disabled, so item and group content is rendered as raw HTML. Only do this for content you fully control."
+        });
+    }
+    const hasSelection = values.itemSelection !== "None";
+    if (hasSelection && values.selectedItemIds) {
+        problems.push({
+            property: "selectedItemIds",
+            severity: "warning",
+            message:
+                "Both Selection and Selected item IDs are bound. Selection decides what is shown as selected; the attribute is only written to."
+        });
+    }
+    if (hasSelection && !values.selectable) {
+        problems.push({
+            property: "selectable",
+            severity: "warning",
+            message: "Selection is bound but Selectable is off, so the user cannot change the selection."
+        });
+    }
+    if (values.selectedItemIds && !values.selectable) {
+        problems.push({
+            property: "selectable",
+            severity: "warning",
+            message: "Selected item IDs is bound but Selectable is off, so the user cannot change the selection."
+        });
+    }
+
+    return problems;
+}
+
+function hideProperties(groups: Properties, keys: string[]): void {
+    if (keys.length === 0) {
+        return;
+    }
+    for (const group of groups) {
+        if (group.properties) {
+            group.properties = group.properties.filter(property => !keys.includes(property.key));
+        }
+        if (group.propertyGroups) {
+            hideProperties(group.propertyGroups, keys);
+        }
+    }
+}

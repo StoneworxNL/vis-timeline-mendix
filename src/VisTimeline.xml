@@ -1,185 +1,1241 @@
-<?xml version="1.0" encoding="utf-8"?>
-<widget id="stoneworx.vistimeline.VisTimeline" pluginWidget="true" needsEntityContext="true" offlineCapable="true"
-        supportedPlatform="Web"
-        xmlns="http://www.mendix.com/widget/1.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://www.mendix.com/widget/1.0/ ../node_modules/mendix/custom_widget.xsd">
+<?xml version="1.0" encoding="utf-8" ?>
+<widget
+    id="stoneworx.vistimeline.VisTimeline"
+    pluginWidget="true"
+    needsEntityContext="true"
+    offlineCapable="true"
+    supportedPlatform="Web"
+    xmlns="http://www.mendix.com/widget/1.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.mendix.com/widget/1.0/ ../node_modules/mendix/custom_widget.xsd"
+>
     <name>Vis Timeline</name>
     <description>Vis Timeline Mendix Pluggable Widget based on https://github.com/visjs/vis-timeline.</description>
-    <icon/>
+    <studioProCategory>Charts</studioProCategory>
+    <helpUrl>https://github.com/StoneworxNL/vis-timeline-mendix/blob/main/README.md</helpUrl>
+    <icon>
+        iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAARUlEQVR42mNgGAXEAjWvp/9JwWRZMH3DD6LwqAW0s4CmkTykkjDJPiQlfsiKo1ELBj6Sh2c6JyuY1LyeLqCm2DC0YEgCAMY59MQePsk8AAAAAElFTkSuQmCC
+    </icon>
     <properties>
-        <propertyGroup caption="Groups">
-            <property key="VisGroupsDataSource" type="datasource" isList="true">
-                <caption>Group Source</caption>
-                <description>The source entity for the timeline rows (groups).</description>
-            </property>
-            <property key="GroupIDAttr" type="attribute" dataSource="VisGroupsDataSource">
-                <caption>Group ID</caption>
-                <description>Unique identifier for the group (typically an Integer or AutoNumber).</description>
-                <attributeTypes>
-                    <attributeType name="String"/>
-                    <attributeType name="Integer"/>
-                    <attributeType name="AutoNumber"/>
-                </attributeTypes>
-            </property>
-            <property key="GroupContentAttr" type="attribute" dataSource="VisGroupsDataSource">
-                <caption>Group Content</caption>
-                <description>The label displayed on the left side of the timeline.</description>
-                <attributeTypes>
-                    <attributeType name="String"/>
-                </attributeTypes>
-            </property>
-            <property key="GroupValue" type="attribute" dataSource="VisGroupsDataSource">
-                <caption>Value</caption>
-                <description />
-                <attributeTypes>
-                    <attributeType name="Integer" />
-                </attributeTypes>
-            </property>
-            <property key="GroupClassName" type="attribute" dataSource="VisGroupsDataSource">
-                <caption>Class Name</caption>
-                <description />
-                <attributeTypes>
-                    <attributeType name="String" />
-                </attributeTypes>
-            </property>
-            <property key="groupAssociation" type="association" selectableObjects="VisGroupsDataSource" dataSource="VisGroupsDataSource" required="false">
-                <caption>Parent (self-association)</caption>
-                <description>Reference to the child Group (can be empty)</description>
-                    <associationTypes>
-                        <associationType name="ReferenceSet"/>
-                    </associationTypes>
-            </property>
-            <property key="groupVisible" type="attribute" dataSource="VisGroupsDataSource" required="false">
-                <caption>Group Visible?</caption>
-                <description />
-                <attributeTypes>
-                    <attributeType name="Boolean" />
-                </attributeTypes>
-            </property>
-            <property key="groupShowNested" type="attribute" dataSource="VisGroupsDataSource" required="false">
-                <caption>Show Nested Groups?</caption>
-                <description />
-                <attributeTypes>
-                    <attributeType name="Boolean" />
-                </attributeTypes>
-            </property>
-            <property key="treeLevel" type="attribute" dataSource="VisGroupsDataSource" required="false">
-                <caption>Group Tree Level</caption>
-                <description />
-                <attributeTypes>
-                    <attributeType name="Integer" />
-                </attributeTypes>
-            </property>
-        </propertyGroup>
         <propertyGroup caption="Items">
-             <property key="VisItemsDataSource" type="datasource" isList="true">
-                <caption>Items</caption>
-                <description />
-            </property>
-            <property key="ItemID" type="attribute" dataSource="VisItemsDataSource">
-                <caption>Item ID</caption>
-                <description />
-                <attributeTypes>
-                    <attributeType name="Integer" />
-                    <attributeType name="String" />
-                </attributeTypes>
-            </property>
-            <property key="ItemGroupID" type="attribute" dataSource="VisItemsDataSource">
-                <caption>Item Group ID</caption>
-                <description>This value must match the Group ID above to place the item in the correct row.</description>
-                <attributeTypes>
-                    <attributeType name="String"/>
-                </attributeTypes>
-            </property>
-            <property key="ItemContent" type="attribute" dataSource="VisItemsDataSource">
-                <caption>Content</caption>
-                <description />
-                <attributeTypes>
-                    <attributeType name="String" />
-                </attributeTypes>
-            </property>
-            <property key="Start" type="attribute" dataSource="VisItemsDataSource">
-                <caption>Start</caption>
-                <description />
-                <attributeTypes>
-                    <attributeType name="DateTime" />
-                </attributeTypes>
-            </property>
-            <property key="End" type="attribute" dataSource="VisItemsDataSource">
-                <caption>End</caption>
-                <description />
-                <attributeTypes>
-                    <attributeType name="DateTime" />
-                </attributeTypes>
-            </property>
-            <property key="Type" type="attribute" dataSource="VisItemsDataSource" required="false">
-                <caption>Type</caption>
-                <description />
-                <attributeTypes>
-                    <attributeType name="Enum" />
-                </attributeTypes>
-            </property>
-            <property key="ItemClassName" type="attribute" dataSource="VisItemsDataSource">
-                <caption>Class Name</caption>
-                <description />
-                <attributeTypes>
-                    <attributeType name="String" />
-                </attributeTypes>
-            </property>
-        </propertyGroup>
-         <propertyGroup caption="Options">
-            <!-- <propertyGroup caption="Main">
+            <propertyGroup caption="Data source">
+                <property key="VisItemsDataSource" type="datasource" isList="true">
+                    <caption>Items</caption>
+                    <description>The list of objects rendered as items on the timeline.</description>
+                </property>
+                <property key="ItemID" type="attribute" dataSource="VisItemsDataSource">
+                    <caption>Item ID</caption>
+                    <description>Unique identifier of the item. Used to match selections, events and group references.</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                        <attributeType name="Integer" />
+                        <attributeType name="Long" />
+                        <attributeType name="AutoNumber" />
+                        <attributeType name="Decimal" />
+                    </attributeTypes>
+                </property>
+                <property key="Start" type="attribute" dataSource="VisItemsDataSource">
+                    <caption>Start</caption>
+                    <description>Start date of the item.</description>
+                    <attributeTypes>
+                        <attributeType name="DateTime" />
+                    </attributeTypes>
+                </property>
+                <property key="End" type="attribute" dataSource="VisItemsDataSource" required="false">
+                    <caption>End</caption>
+                    <description>End date of the item. Leave empty for box and point items.</description>
+                    <attributeTypes>
+                        <attributeType name="DateTime" />
+                    </attributeTypes>
+                </property>
+                <property key="ItemGroupID" type="attribute" dataSource="VisItemsDataSource" required="false">
+                    <caption>Item Group ID</caption>
+                    <description>Must match the Group ID of the group the item belongs to.</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                        <attributeType name="Integer" />
+                        <attributeType name="Long" />
+                        <attributeType name="AutoNumber" />
+                        <attributeType name="Decimal" />
+                    </attributeTypes>
+                </property>
+                <property key="itemSubgroupId" type="attribute" dataSource="VisItemsDataSource" required="false">
+                    <caption>Item Subgroup ID</caption>
+                    <description>Places the item in a subgroup, a stacked lane inside its group.</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                        <attributeType name="Integer" />
+                        <attributeType name="Long" />
+                        <attributeType name="AutoNumber" />
+                        <attributeType name="Decimal" />
+                    </attributeTypes>
+                </property>
+                <property key="itemOrderValue" type="attribute" dataSource="VisItemsDataSource" required="false">
+                    <caption>Order value</caption>
+                    <description>Sorts items within a group, lowest first. Also usable as the group's Subgroup order field under the name orderValue.</description>
+                    <attributeTypes>
+                        <attributeType name="Integer" />
+                        <attributeType name="Long" />
+                        <attributeType name="Decimal" />
+                    </attributeTypes>
+                </property>
             </propertyGroup>
-            <propertyGroup caption="Editability">
-            </propertyGroup> -->
-            <propertyGroup caption="Snapping">
-                <property key="IsSnap" type="expression">
-                    <caption>Apply snapping?</caption>
-                    <description />
+            <propertyGroup caption="Content">
+                <property key="itemContentType" type="enumeration" defaultValue="attribute">
+                    <caption>Content type</caption>
+                    <description>Attribute renders plain text, or HTML when XSS protection is disabled. Custom renders the widgets you drop below, so any Mendix widget can be used as an item template.</description>
+                    <enumerationValues>
+                        <enumerationValue key="attribute">Attribute</enumerationValue>
+                        <enumerationValue key="custom">Custom (widgets)</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="ItemContent" type="attribute" dataSource="VisItemsDataSource" required="false">
+                    <caption>Content</caption>
+                    <description>Label shown on the item.</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                    </attributeTypes>
+                </property>
+                <property key="itemContentWidgets" type="widgets" dataSource="VisItemsDataSource" required="false">
+                    <caption>Content widgets</caption>
+                    <description>Rendered inside every item when Content type is Custom.</description>
+                </property>
+                <property key="itemVisibleFrameWidgets" type="widgets" dataSource="VisItemsDataSource" required="false">
+                    <caption>Visible frame widgets</caption>
+                    <description>Rendered in the visible part of a range item, so the content stays readable when the item is scrolled partly out of view.</description>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Item styling">
+                <property key="Type" type="attribute" dataSource="VisItemsDataSource" required="false">
+                    <caption>Type</caption>
+                    <description>box, point, range or background. Falls back to the default item type when empty.</description>
+                    <attributeTypes>
+                        <attributeType name="Enum" />
+                        <attributeType name="String" />
+                    </attributeTypes>
+                </property>
+                <property key="ItemClassName" type="attribute" dataSource="VisItemsDataSource" required="false">
+                    <caption>Class name</caption>
+                    <description>CSS class names added to the item element.</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                    </attributeTypes>
+                </property>
+                <property key="itemStyle" type="attribute" dataSource="VisItemsDataSource" required="false">
+                    <caption>Style</caption>
+                    <description>Inline CSS applied to the item element, for example: color: white; background-color: red;</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                    </attributeTypes>
+                </property>
+                <property key="itemAlign" type="attribute" dataSource="VisItemsDataSource" required="false">
+                    <caption>Align</caption>
+                    <description>Alignment of the content inside the item: auto, center, left or right.</description>
+                    <attributeTypes>
+                        <attributeType name="Enum" />
+                        <attributeType name="String" />
+                    </attributeTypes>
+                </property>
+                <property key="itemLimitSize" type="attribute" dataSource="VisItemsDataSource" required="false">
+                    <caption>Limit size</caption>
+                    <description>When false the item element is not clipped to the visible window. Needed for very wide range items with absolutely positioned content.</description>
+                    <attributeTypes>
+                        <attributeType name="Boolean" />
+                    </attributeTypes>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Item tooltip">
+                <property key="itemTooltipType" type="enumeration" defaultValue="none">
+                    <caption>Tooltip type</caption>
+                    <description>Choose between no tooltip, a text template, or any Mendix widgets as tooltip content.</description>
+                    <enumerationValues>
+                        <enumerationValue key="none">None</enumerationValue>
+                        <enumerationValue key="text">Text template</enumerationValue>
+                        <enumerationValue key="custom">Custom (widgets)</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="itemTitle" type="textTemplate" dataSource="VisItemsDataSource" required="false">
+                    <caption>Tooltip text</caption>
+                    <description>Tooltip content shown when hovering the item.</description>
+                </property>
+                <property key="itemTooltipWidgets" type="widgets" dataSource="VisItemsDataSource" required="false">
+                    <caption>Tooltip widgets</caption>
+                    <description>Rendered inside the tooltip when Tooltip type is Custom.</description>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Item editability">
+                <property key="itemEditable" type="attribute" dataSource="VisItemsDataSource" required="false">
+                    <caption>Editable</caption>
+                    <description>Overrides the timeline wide editability for this item. Ignored when Timeline settings override items is on.</description>
+                    <attributeTypes>
+                        <attributeType name="Boolean" />
+                    </attributeTypes>
+                </property>
+                <property
+                    key="itemEditableUpdateTime"
+                    type="attribute"
+                    dataSource="VisItemsDataSource"
+                    required="false"
+                >
+                    <caption>Editable: update time</caption>
+                    <description>Allows dragging this item horizontally.</description>
+                    <attributeTypes>
+                        <attributeType name="Boolean" />
+                    </attributeTypes>
+                </property>
+                <property
+                    key="itemEditableUpdateGroup"
+                    type="attribute"
+                    dataSource="VisItemsDataSource"
+                    required="false"
+                >
+                    <caption>Editable: update group</caption>
+                    <description>Allows dragging this item to another group.</description>
+                    <attributeTypes>
+                        <attributeType name="Boolean" />
+                    </attributeTypes>
+                </property>
+                <property key="itemEditableRemove" type="attribute" dataSource="VisItemsDataSource" required="false">
+                    <caption>Editable: remove</caption>
+                    <description>Allows deleting this item.</description>
+                    <attributeTypes>
+                        <attributeType name="Boolean" />
+                    </attributeTypes>
+                </property>
+                <property key="itemSelectable" type="attribute" dataSource="VisItemsDataSource" required="false">
+                    <caption>Selectable</caption>
+                    <description>When false this item cannot be selected.</description>
+                    <attributeTypes>
+                        <attributeType name="Boolean" />
+                    </attributeTypes>
+                </property>
+            </propertyGroup>
+        </propertyGroup>
+        <propertyGroup caption="Groups">
+            <propertyGroup caption="Data source">
+                <property key="VisGroupsDataSource" type="datasource" isList="true" required="false">
+                    <caption>Groups</caption>
+                    <description>Optional list of objects rendered as rows. Leave empty for an ungrouped timeline.</description>
+                </property>
+                <property key="GroupIDAttr" type="attribute" dataSource="VisGroupsDataSource" required="false">
+                    <caption>Group ID</caption>
+                    <description>Unique identifier of the group. Items refer to it through Item Group ID.</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                        <attributeType name="Integer" />
+                        <attributeType name="Long" />
+                        <attributeType name="AutoNumber" />
+                        <attributeType name="Decimal" />
+                    </attributeTypes>
+                </property>
+                <property
+                    key="groupAssociation"
+                    type="association"
+                    selectableObjects="VisGroupsDataSource"
+                    dataSource="VisGroupsDataSource"
+                    required="false"
+                >
+                    <caption>Nested groups</caption>
+                    <description>Self reference set pointing at the child groups of this group.</description>
+                    <associationTypes>
+                        <associationType name="ReferenceSet" />
+                    </associationTypes>
+                </property>
+                <property key="treeLevel" type="attribute" dataSource="VisGroupsDataSource" required="false">
+                    <caption>Tree level</caption>
+                    <description>Nesting depth of the group, starting at 1 for root groups.</description>
+                    <attributeTypes>
+                        <attributeType name="Integer" />
+                        <attributeType name="Long" />
+                    </attributeTypes>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Group content">
+                <property key="groupContentType" type="enumeration" defaultValue="attribute">
+                    <caption>Group content type</caption>
+                    <description>Attribute renders plain text, or HTML when XSS protection is disabled. Custom renders the widgets you drop below.</description>
+                    <enumerationValues>
+                        <enumerationValue key="attribute">Attribute</enumerationValue>
+                        <enumerationValue key="custom">Custom (widgets)</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="GroupContentAttr" type="attribute" dataSource="VisGroupsDataSource" required="false">
+                    <caption>Group content</caption>
+                    <description>Label shown in the group column.</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                    </attributeTypes>
+                </property>
+                <property key="groupContentWidgets" type="widgets" dataSource="VisGroupsDataSource" required="false">
+                    <caption>Group content widgets</caption>
+                    <description>Rendered inside every group label when Group content type is Custom.</description>
+                </property>
+                <property key="groupTitle" type="textTemplate" dataSource="VisGroupsDataSource" required="false">
+                    <caption>Group tooltip</caption>
+                    <description>Tooltip shown when hovering the group label.</description>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Group styling">
+                <property key="GroupClassName" type="attribute" dataSource="VisGroupsDataSource" required="false">
+                    <caption>Group class name</caption>
+                    <description>CSS class names added to the group row.</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                    </attributeTypes>
+                </property>
+                <property key="groupStyle" type="attribute" dataSource="VisGroupsDataSource" required="false">
+                    <caption>Group style</caption>
+                    <description>Inline CSS applied to the group row.</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                    </attributeTypes>
+                </property>
+                <property key="groupVisible" type="attribute" dataSource="VisGroupsDataSource" required="false">
+                    <caption>Group visible</caption>
+                    <description>Hides the group row when false. Defaults to visible.</description>
+                    <attributeTypes>
+                        <attributeType name="Boolean" />
+                    </attributeTypes>
+                </property>
+                <property key="groupShowNested" type="attribute" dataSource="VisGroupsDataSource" required="false">
+                    <caption>Show nested groups</caption>
+                    <description>Whether this group starts expanded. Defaults to expanded.</description>
+                    <attributeTypes>
+                        <attributeType name="Boolean" />
+                    </attributeTypes>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Group ordering">
+                <property key="GroupValue" type="attribute" dataSource="VisGroupsDataSource" required="false">
+                    <caption>Order value</caption>
+                    <description>Numeric value the groups are sorted by when Group order is set to Order value.</description>
+                    <attributeTypes>
+                        <attributeType name="Integer" />
+                        <attributeType name="Long" />
+                        <attributeType name="Decimal" />
+                    </attributeTypes>
+                </property>
+                <property key="groupOrderMode" type="enumeration" defaultValue="none">
+                    <caption>Group order</caption>
+                    <description>Sorting applied to the group rows.</description>
+                    <enumerationValues>
+                        <enumerationValue key="none">Data source order</enumerationValue>
+                        <enumerationValue key="value">Order value</enumerationValue>
+                        <enumerationValue key="content">Content</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="groupSubgroupOrder" type="attribute" dataSource="VisGroupsDataSource" required="false">
+                    <caption>Subgroup order field</caption>
+                    <description>Name of the item field the subgroups of this group are sorted by, for example orderValue, start or content.</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                    </attributeTypes>
+                </property>
+                <property key="groupSubgroupStack" type="attribute" dataSource="VisGroupsDataSource" required="false">
+                    <caption>Stack subgroups</caption>
+                    <description>Whether items inside the subgroups of this group are stacked.</description>
+                    <attributeTypes>
+                        <attributeType name="Boolean" />
+                    </attributeTypes>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Subgroups">
+                <property key="subgroupsDataSource" type="datasource" isList="true" required="false">
+                    <caption>Subgroups</caption>
+                    <description>Optional list describing the subgroups, used to toggle their visibility.</description>
+                </property>
+                <property key="subgroupGroupId" type="attribute" dataSource="subgroupsDataSource" required="false">
+                    <caption>Subgroup: group ID</caption>
+                    <description>The Group ID this subgroup belongs to.</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                        <attributeType name="Integer" />
+                        <attributeType name="Long" />
+                        <attributeType name="AutoNumber" />
+                        <attributeType name="Decimal" />
+                    </attributeTypes>
+                </property>
+                <property key="subgroupId" type="attribute" dataSource="subgroupsDataSource" required="false">
+                    <caption>Subgroup ID</caption>
+                    <description>Must match the Item Subgroup ID of the items in this subgroup.</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                        <attributeType name="Integer" />
+                        <attributeType name="Long" />
+                        <attributeType name="AutoNumber" />
+                        <attributeType name="Decimal" />
+                    </attributeTypes>
+                </property>
+                <property key="subgroupVisible" type="attribute" dataSource="subgroupsDataSource" required="false">
+                    <caption>Subgroup visible</caption>
+                    <description>Hides all items of this subgroup when false.</description>
+                    <attributeTypes>
+                        <attributeType name="Boolean" />
+                    </attributeTypes>
+                </property>
+            </propertyGroup>
+        </propertyGroup>
+        <propertyGroup caption="Markers">
+            <propertyGroup caption="Current time">
+                <property key="showCurrentTime" type="boolean" defaultValue="true">
+                    <caption>Show current time</caption>
+                    <description>Draws a vertical bar at the current time, updated every second.</description>
+                </property>
+                <property key="currentTime" type="expression" required="false">
+                    <caption>Current time</caption>
+                    <description>Overrides the browser clock, for example to follow server time.</description>
+                    <returnType type="DateTime" />
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Custom time bars">
+                <property key="markersDataSource" type="datasource" isList="true" required="false">
+                    <caption>Markers</caption>
+                    <description>Optional list of draggable vertical time bars.</description>
+                </property>
+                <property key="markerId" type="attribute" dataSource="markersDataSource" required="false">
+                    <caption>Marker ID</caption>
+                    <description>Unique identifier of the marker. It is also added as a CSS class on the bar, so markers can be styled individually.</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                        <attributeType name="Integer" />
+                        <attributeType name="Long" />
+                        <attributeType name="AutoNumber" />
+                        <attributeType name="Decimal" />
+                    </attributeTypes>
+                </property>
+                <property key="markerTime" type="attribute" dataSource="markersDataSource" required="false">
+                    <caption>Marker time</caption>
+                    <description>Position of the marker on the time axis.</description>
+                    <attributeTypes>
+                        <attributeType name="DateTime" />
+                    </attributeTypes>
+                </property>
+                <property key="markerTitle" type="textTemplate" dataSource="markersDataSource" required="false">
+                    <caption>Marker tooltip</caption>
+                    <description>Tooltip shown when hovering the marker.</description>
+                </property>
+                <property key="markerLabel" type="textTemplate" dataSource="markersDataSource" required="false">
+                    <caption>Marker label</caption>
+                    <description>Text shown on the bar itself, at the top of the timeline. Leave empty for a plain bar.</description>
+                </property>
+                <property key="markerLabelEditable" type="attribute" dataSource="markersDataSource" required="false">
+                    <caption>Marker label editable</caption>
+                    <description>Lets the user type in the label. The text is handed to On marker label changing and On marker label changed; store it in the attribute behind the label to keep it.</description>
+                    <attributeTypes>
+                        <attributeType name="Boolean" />
+                    </attributeTypes>
+                </property>
+            </propertyGroup>
+        </propertyGroup>
+        <propertyGroup caption="Appearance">
+            <propertyGroup caption="Size">
+                <property key="height" type="expression" required="false">
+                    <caption>Height</caption>
+                    <description>CSS height of the timeline, for example '400px'. Leave empty to size to the content.</description>
+                    <returnType type="String" />
+                </property>
+                <property key="minHeight" type="expression" required="false">
+                    <caption>Minimum height</caption>
+                    <description>CSS minimum height, for example '200px'.</description>
+                    <returnType type="String" />
+                </property>
+                <property key="maxHeight" type="expression" required="false">
+                    <caption>Maximum height</caption>
+                    <description>CSS maximum height, for example '600px'. Combine with vertical scrolling.</description>
+                    <returnType type="String" />
+                </property>
+                <property key="width" type="expression" required="false">
+                    <caption>Width</caption>
+                    <description>CSS width of the timeline, for example '100%'.</description>
+                    <returnType type="String" />
+                </property>
+                <property key="autoResize" type="boolean" defaultValue="true">
+                    <caption>Auto resize</caption>
+                    <description>Automatically redraw when the container is resized.</description>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Layout">
+                <property key="orientationAxis" type="enumeration" defaultValue="bottom">
+                    <caption>Axis orientation</caption>
+                    <description>Where the time axis is drawn.</description>
+                    <enumerationValues>
+                        <enumerationValue key="top">Top</enumerationValue>
+                        <enumerationValue key="bottom">Bottom</enumerationValue>
+                        <enumerationValue key="both">Both</enumerationValue>
+                        <enumerationValue key="none">None</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="orientationItem" type="enumeration" defaultValue="bottom">
+                    <caption>Item orientation</caption>
+                    <description>Whether items are aligned to the top or the bottom of their row.</description>
+                    <enumerationValues>
+                        <enumerationValue key="top">Top</enumerationValue>
+                        <enumerationValue key="bottom">Bottom</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="align" type="enumeration" defaultValue="auto">
+                    <caption>Content alignment</caption>
+                    <description>Default alignment of content inside items.</description>
+                    <enumerationValues>
+                        <enumerationValue key="auto">Auto</enumerationValue>
+                        <enumerationValue key="center">Center</enumerationValue>
+                        <enumerationValue key="left">Left</enumerationValue>
+                        <enumerationValue key="right">Right</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="defaultItemType" type="enumeration" defaultValue="auto">
+                    <caption>Default item type</caption>
+                    <description>Item type used for items that do not specify one. Auto means box without an end date and range with one.</description>
+                    <enumerationValues>
+                        <enumerationValue key="auto">Auto</enumerationValue>
+                        <enumerationValue key="box">Box</enumerationValue>
+                        <enumerationValue key="point">Point</enumerationValue>
+                        <enumerationValue key="range">Range</enumerationValue>
+                        <enumerationValue key="background">Background</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="stack" type="boolean" defaultValue="true">
+                    <caption>Stack items</caption>
+                    <description>Move overlapping items so they do not cover each other.</description>
+                </property>
+                <property key="stackSubgroups" type="boolean" defaultValue="true">
+                    <caption>Stack subgroups</caption>
+                    <description>Stack the subgroups within each group.</description>
+                </property>
+                <property key="groupHeightMode" type="enumeration" defaultValue="auto">
+                    <caption>Group height mode</caption>
+                    <description>Auto sizes each group to its content, Fixed gives every group the same height, Fit items sizes to the visible items only.</description>
+                    <enumerationValues>
+                        <enumerationValue key="auto">Auto</enumerationValue>
+                        <enumerationValue key="fixed">Fixed</enumerationValue>
+                        <enumerationValue key="fitItems">Fit items</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="marginAxis" type="integer" defaultValue="20">
+                    <caption>Margin: axis</caption>
+                    <description>Minimum distance in pixels between items and the time axis.</description>
+                </property>
+                <property key="marginItemHorizontal" type="integer" defaultValue="10">
+                    <caption>Margin: item horizontal</caption>
+                    <description>Minimum horizontal distance in pixels between items.</description>
+                </property>
+                <property key="marginItemVertical" type="integer" defaultValue="10">
+                    <caption>Margin: item vertical</caption>
+                    <description>Minimum vertical distance in pixels between items.</description>
+                </property>
+                <property key="rtl" type="boolean" defaultValue="false">
+                    <caption>Right to left</caption>
+                    <description>Render the timeline right to left.</description>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Labels and tooltips">
+                <property key="showMajorLabels" type="boolean" defaultValue="true">
+                    <caption>Show major labels</caption>
+                    <description>Show the upper row of the time axis.</description>
+                </property>
+                <property key="showMinorLabels" type="boolean" defaultValue="true">
+                    <caption>Show minor labels</caption>
+                    <description>Show the lower row of the time axis.</description>
+                </property>
+                <property key="showWeekScale" type="boolean" defaultValue="false">
+                    <caption>Show week scale</caption>
+                    <description>Add a calendar week number scale to the time axis.</description>
+                </property>
+                <property key="maxMinorChars" type="integer" defaultValue="7">
+                    <caption>Maximum minor label characters</caption>
+                    <description>Character width used to decide when the axis switches to a coarser scale.</description>
+                </property>
+                <property key="showTooltips" type="boolean" defaultValue="true">
+                    <caption>Show tooltips</caption>
+                    <description>Show the item tooltip on hover.</description>
+                </property>
+                <property key="tooltipFollowMouse" type="boolean" defaultValue="false">
+                    <caption>Tooltip follows mouse</caption>
+                    <description>Move the tooltip along with the cursor instead of pinning it to the item.</description>
+                </property>
+                <property key="tooltipOverflowMethod" type="enumeration" defaultValue="flip">
+                    <caption>Tooltip overflow</caption>
+                    <description>How a tooltip that does not fit the window is repositioned.</description>
+                    <enumerationValues>
+                        <enumerationValue key="cap">Cap</enumerationValue>
+                        <enumerationValue key="flip">Flip</enumerationValue>
+                        <enumerationValue key="none">None</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="tooltipDelay" type="integer" defaultValue="500">
+                    <caption>Tooltip delay</caption>
+                    <description>Delay in milliseconds before the tooltip appears.</description>
+                </property>
+                <property key="tooltipOnItemUpdateTime" type="boolean" defaultValue="false">
+                    <caption>Tooltip while dragging</caption>
+                    <description>Show the item dates in a tooltip while the item is being dragged or resized.</description>
+                </property>
+            </propertyGroup>
+        </propertyGroup>
+        <propertyGroup caption="Time axis">
+            <propertyGroup caption="Visible window">
+                <property key="windowStart" type="expression" required="false">
+                    <caption>Window start</caption>
+                    <description>Start of the visible window. The window is moved whenever this value changes.</description>
+                    <returnType type="DateTime" />
+                </property>
+                <property key="windowEnd" type="expression" required="false">
+                    <caption>Window end</caption>
+                    <description>End of the visible window. The window is moved whenever this value changes.</description>
+                    <returnType type="DateTime" />
+                </property>
+                <property key="fitOnDataChange" type="enumeration" defaultValue="firstLoad">
+                    <caption>Fit to items</caption>
+                    <description>When the visible window is adjusted to contain all items.</description>
+                    <enumerationValues>
+                        <enumerationValue key="never">Never</enumerationValue>
+                        <enumerationValue key="firstLoad">On first load</enumerationValue>
+                        <enumerationValue key="always">Every data change</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="minDate" type="expression" required="false">
+                    <caption>Minimum date</caption>
+                    <description>The timeline cannot be moved before this date.</description>
+                    <returnType type="DateTime" />
+                </property>
+                <property key="maxDate" type="expression" required="false">
+                    <caption>Maximum date</caption>
+                    <description>The timeline cannot be moved beyond this date.</description>
+                    <returnType type="DateTime" />
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Scale">
+                <property key="timeAxisScale" type="enumeration" defaultValue="auto">
+                    <caption>Fixed scale</caption>
+                    <description>Forces a fixed scale on the time axis instead of adapting to the zoom level.</description>
+                    <enumerationValues>
+                        <enumerationValue key="auto">Auto</enumerationValue>
+                        <enumerationValue key="millisecond">Millisecond</enumerationValue>
+                        <enumerationValue key="second">Second</enumerationValue>
+                        <enumerationValue key="minute">Minute</enumerationValue>
+                        <enumerationValue key="hour">Hour</enumerationValue>
+                        <enumerationValue key="weekday">Weekday</enumerationValue>
+                        <enumerationValue key="day">Day</enumerationValue>
+                        <enumerationValue key="week">Week</enumerationValue>
+                        <enumerationValue key="month">Month</enumerationValue>
+                        <enumerationValue key="year">Year</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="timeAxisStep" type="integer" defaultValue="1">
+                    <caption>Fixed scale step</caption>
+                    <description>Step size of the fixed scale, for example 5 with scale Minute.</description>
+                </property>
+                <property key="formatMinorLabels" type="expression" required="false">
+                    <caption>Minor label formats</caption>
+                    <description>JSON object with moment.js formats per scale, for example {"weekday":"ddd D","day":"D"}.</description>
+                    <returnType type="String" />
+                </property>
+                <property key="formatMajorLabels" type="expression" required="false">
+                    <caption>Major label formats</caption>
+                    <description>JSON object with moment.js formats per scale, for example {"day":"MMMM YYYY"}.</description>
+                    <returnType type="String" />
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Localization">
+                <property key="locale" type="expression" required="false">
+                    <caption>Locale</caption>
+                    <description>moment.js locale code, for example 'nl' or 'de'. Leave empty for English.</description>
+                    <returnType type="String" />
+                </property>
+                <property key="localeCurrentLabel" type="expression" required="false">
+                    <caption>Label for current</caption>
+                    <description>Overrides the word shown on the current time bar tooltip.</description>
+                    <returnType type="String" />
+                </property>
+                <property key="localeTimeLabel" type="expression" required="false">
+                    <caption>Label for time</caption>
+                    <description>Overrides the word shown on custom time bar tooltips.</description>
+                    <returnType type="String" />
+                </property>
+                <property key="timeZoneOffset" type="expression" required="false">
+                    <caption>Time zone offset</caption>
+                    <description>Renders all dates in a fixed offset instead of the browser time zone, for example '+05:30' or '-08:00'.</description>
+                    <returnType type="String" />
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Hidden periods">
+                <property key="hiddenDatesDataSource" type="datasource" isList="true" required="false">
+                    <caption>Hidden periods</caption>
+                    <description>Optional list of periods that are cut out of the timeline, such as weekends or nights.</description>
+                </property>
+                <property key="hiddenDateStart" type="attribute" dataSource="hiddenDatesDataSource" required="false">
+                    <caption>Hidden period start</caption>
+                    <description>Start of the hidden period.</description>
+                    <attributeTypes>
+                        <attributeType name="DateTime" />
+                    </attributeTypes>
+                </property>
+                <property key="hiddenDateEnd" type="attribute" dataSource="hiddenDatesDataSource" required="false">
+                    <caption>Hidden period end</caption>
+                    <description>End of the hidden period.</description>
+                    <attributeTypes>
+                        <attributeType name="DateTime" />
+                    </attributeTypes>
+                </property>
+                <property key="hiddenDateRepeat" type="attribute" dataSource="hiddenDatesDataSource" required="false">
+                    <caption>Hidden period repeat</caption>
+                    <description>Empty, daily, weekly, monthly or yearly.</description>
+                    <attributeTypes>
+                        <attributeType name="Enum" />
+                        <attributeType name="String" />
+                    </attributeTypes>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Rolling mode">
+                <property key="rollingMode" type="boolean" defaultValue="false">
+                    <caption>Rolling mode</caption>
+                    <description>Keep the current time in view and scroll the window along with it.</description>
+                </property>
+                <property key="rollingModeOffset" type="decimal" defaultValue="0.5">
+                    <caption>Rolling mode offset</caption>
+                    <description>Horizontal position of the current time, from 0 (left) to 1 (right).</description>
+                </property>
+            </propertyGroup>
+        </propertyGroup>
+        <propertyGroup caption="Interaction">
+            <propertyGroup caption="Selection">
+                <property key="selectable" type="boolean" defaultValue="true">
+                    <caption>Selectable</caption>
+                    <description>Allow items to be selected.</description>
+                </property>
+                <property key="multiselect" type="boolean" defaultValue="false">
+                    <caption>Multi select</caption>
+                    <description>Allow selecting multiple items with ctrl or shift.</description>
+                </property>
+                <property key="multiselectPerGroup" type="boolean" defaultValue="false">
+                    <caption>Multi select per group</caption>
+                    <description>Restrict a multi selection to items in the same group.</description>
+                </property>
+                <property key="sequentialSelection" type="boolean" defaultValue="false">
+                    <caption>Sequential selection</caption>
+                    <description>Only allow selecting items that are adjacent in time.</description>
+                </property>
+                <property key="longSelectPressTime" type="integer" defaultValue="251">
+                    <caption>Long press time</caption>
+                    <description>Milliseconds a touch must be held before it counts as a selection.</description>
+                </property>
+                <property key="selectedItemIds" type="attribute" required="false">
+                    <caption>Selected item IDs</caption>
+                    <description>Two way bound, comma separated list of selected item IDs. Write to it to change the selection from a microflow.</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                    </attributeTypes>
+                </property>
+                <property key="itemSelection" type="selection" dataSource="VisItemsDataSource">
+                    <caption>Selection</caption>
+                    <description>Binds the selection to the item objects themselves, so a microflow or another widget on the page works with the objects rather than with a list of ids. Choosing Multi also switches multi select on.</description>
+                    <selectionTypes>
+                        <selectionType name="None" />
+                        <selectionType name="Single" />
+                        <selectionType name="Multi" />
+                    </selectionTypes>
+                </property>
+                <property key="focusOnSelection" type="boolean" defaultValue="false">
+                    <caption>Focus on selection</caption>
+                    <description>Move the window to the selected items when the selection is set from Mendix.</description>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Move and zoom">
+                <property key="moveable" type="boolean" defaultValue="true">
+                    <caption>Moveable</caption>
+                    <description>Allow dragging the window.</description>
+                </property>
+                <property key="zoomable" type="boolean" defaultValue="true">
+                    <caption>Zoomable</caption>
+                    <description>Allow zooming with the scroll wheel or pinch.</description>
+                </property>
+                <property key="zoomKey" type="enumeration" defaultValue="none">
+                    <caption>Zoom key</caption>
+                    <description>Require this key to be held while scrolling in order to zoom.</description>
+                    <enumerationValues>
+                        <enumerationValue key="none">None</enumerationValue>
+                        <enumerationValue key="altKey">Alt</enumerationValue>
+                        <enumerationValue key="ctrlKey">Ctrl</enumerationValue>
+                        <enumerationValue key="shiftKey">Shift</enumerationValue>
+                        <enumerationValue key="metaKey">Meta</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="zoomFriction" type="integer" defaultValue="5">
+                    <caption>Zoom friction</caption>
+                    <description>Higher values make zooming slower.</description>
+                </property>
+                <property key="zoomMin" type="expression" required="false">
+                    <caption>Minimum zoom interval</caption>
+                    <description>Smallest visible interval in milliseconds, for example 3600000 for one hour.</description>
+                    <returnType type="Integer" />
+                </property>
+                <property key="zoomMax" type="expression" required="false">
+                    <caption>Maximum zoom interval</caption>
+                    <description>Largest visible interval in milliseconds.</description>
+                    <returnType type="Integer" />
+                </property>
+                <property key="preferZoom" type="boolean" defaultValue="false">
+                    <caption>Prefer zoom</caption>
+                    <description>Zoom instead of scroll when the wheel is used without the zoom key.</description>
+                </property>
+                <property key="horizontalScroll" type="boolean" defaultValue="false">
+                    <caption>Horizontal scroll</caption>
+                    <description>Move the window with the scroll wheel.</description>
+                </property>
+                <property key="horizontalScrollInvert" type="boolean" defaultValue="false">
+                    <caption>Invert horizontal scroll</caption>
+                    <description>Invert the direction of horizontal scrolling.</description>
+                </property>
+                <property key="verticalScroll" type="boolean" defaultValue="false">
+                    <caption>Vertical scroll</caption>
+                    <description>Scroll the groups vertically with the scroll wheel. Combine with a maximum height.</description>
+                </property>
+                <property key="clickToUse" type="boolean" defaultValue="false">
+                    <caption>Click to use</caption>
+                    <description>Only react to mouse and touch events after the timeline has been clicked once.</description>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Clustering">
+                <property key="clusterItems" type="boolean" defaultValue="false">
+                    <caption>Cluster items</caption>
+                    <description>Merge items that are close together into a single cluster when zoomed out.</description>
+                </property>
+                <property key="clusterMaxItems" type="integer" defaultValue="5">
+                    <caption>Cluster maximum items</caption>
+                    <description>Number of items shown before the rest is clustered.</description>
+                </property>
+                <property key="clusterFitOnDoubleClick" type="boolean" defaultValue="true">
+                    <caption>Cluster fit on double click</caption>
+                    <description>Zoom to the contents of a cluster when it is double clicked.</description>
+                </property>
+                <property key="clusterShowStipes" type="boolean" defaultValue="false">
+                    <caption>Cluster show stripes</caption>
+                    <description>Draw a line from a cluster to the items it contains.</description>
+                </property>
+                <property key="clusterTitleTemplate" type="expression" required="false">
+                    <caption>Cluster title template</caption>
+                    <description>Label of a cluster. Use {count} for the number of clustered items.</description>
+                    <returnType type="String" />
+                </property>
+            </propertyGroup>
+        </propertyGroup>
+        <propertyGroup caption="Editing">
+            <propertyGroup caption="Items">
+                <property key="editableAdd" type="expression" defaultValue="true">
+                    <caption>Allow add</caption>
+                    <description>Allow creating items by double clicking an empty spot.</description>
                     <returnType type="Boolean" />
+                </property>
+                <property key="editableRemove" type="expression" defaultValue="true">
+                    <caption>Allow remove</caption>
+                    <description>Show a delete button on selected items.</description>
+                    <returnType type="Boolean" />
+                </property>
+                <property key="editableUpdateTime" type="expression" defaultValue="true">
+                    <caption>Allow drag in time</caption>
+                    <description>Allow dragging and resizing items horizontally.</description>
+                    <returnType type="Boolean" />
+                </property>
+                <property key="editableUpdateGroup" type="expression" defaultValue="true">
+                    <caption>Allow drag between groups</caption>
+                    <description>Allow dragging items to another group.</description>
+                    <returnType type="Boolean" />
+                </property>
+                <property key="editableOverrideItems" type="boolean" defaultValue="false">
+                    <caption>Timeline settings override items</caption>
+                    <description>Ignore the per item editability attributes and use these timeline wide settings for every item.</description>
+                </property>
+                <property key="itemsAlwaysDraggableItem" type="boolean" defaultValue="false">
+                    <caption>Items always draggable</caption>
+                    <description>Drag items without selecting them first.</description>
+                </property>
+                <property key="itemsAlwaysDraggableRange" type="boolean" defaultValue="false">
+                    <caption>Ranges always resizable</caption>
+                    <description>Resize range items without selecting them first.</description>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Groups">
+                <property key="groupEditableAdd" type="expression" defaultValue="true">
+                    <caption>Allow add group</caption>
+                    <description>Allow dragging an item onto the group area to create a group.</description>
+                    <returnType type="Boolean" />
+                </property>
+                <property key="groupEditableRemove" type="expression" defaultValue="true">
+                    <caption>Allow remove group</caption>
+                    <description>Allow removing groups.</description>
+                    <returnType type="Boolean" />
+                </property>
+                <property key="groupEditableOrder" type="expression" defaultValue="true">
+                    <caption>Allow reorder groups</caption>
+                    <description>Allow dragging groups to reorder them. Requires an Order value and Group order set to Order value.</description>
+                    <returnType type="Boolean" />
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Snapping">
+                <property key="IsSnap" type="expression" defaultValue="true">
+                    <caption>Apply snapping?</caption>
+                    <description>Snap dragged items to nice round values. Turn off for free positioning.</description>
+                    <returnType type="Boolean" />
+                </property>
+                <property key="snapMinutes" type="integer" defaultValue="0">
+                    <caption>Snap to minutes</caption>
+                    <description>Snap to a fixed number of minutes, for example 15. Leave at 0 to use the default snapping of vis-timeline.</description>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Behaviour">
+                <property key="addMode" type="enumeration" defaultValue="callAction">
+                    <caption>On add behaviour</caption>
+                    <description>Whether a newly drawn item is kept on screen, or discarded so it can be recreated by the On add action through the data source.</description>
+                    <enumerationValues>
+                        <enumerationValue key="callAction">Discard and let the action create it</enumerationValue>
+                        <enumerationValue key="addAndCallAction">Keep on screen and call the action</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="moveMode" type="enumeration" defaultValue="moveAndCallAction">
+                    <caption>On move behaviour</caption>
+                    <description>Whether a moved item keeps its new position, or snaps back so it can be repositioned by the On move action through the data source.</description>
+                    <enumerationValues>
+                        <enumerationValue key="moveAndCallAction">Keep new position and call the action</enumerationValue>
+                        <enumerationValue key="callAction">Revert and let the action move it</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="removeMode" type="enumeration" defaultValue="callAction">
+                    <caption>On remove behaviour</caption>
+                    <description>Whether a deleted item disappears immediately, or stays until the On remove action deletes it through the data source.</description>
+                    <enumerationValues>
+                        <enumerationValue key="callAction">Keep and let the action delete it</enumerationValue>
+                        <enumerationValue key="removeAndCallAction">Remove immediately and call the action</enumerationValue>
+                    </enumerationValues>
                 </property>
             </propertyGroup>
         </propertyGroup>
         <propertyGroup caption="Events">
-            <property key="clickAction" type="action">
-                <caption>On click</caption>
-                <description>Action to be performed when item is clicked.</description>
-                <actionVariables>
-                    <actionVariable key="clickedItemID" type="String" caption="Clicked Item ID" />
-                </actionVariables>
-            </property>
-            <property key="doubleClickAction" type="action">
-                <caption>On double click</caption>
-                <description>Action to be performed when item is double-clicked.</description>
-                <actionVariables>
-                    <actionVariable key="doubleClickedItemID" type="String" caption="Double clicked Item ID" />
-                </actionVariables>
-            </property>
-            <property key="onAddAction" type="action">
-                <caption>On Add</caption>
-                <description>Action to be performed when item is added.</description>
-                <actionVariables>
-                    <actionVariable key="data" type="String" caption="Added Item Stringified JSON" />
-                </actionVariables>
-            </property>
-            <property key="onUpdateAction" type="action">
-                <caption>On Update</caption>
-                <description>Action to be performed when item is updated.</description>
-                <actionVariables>
-                    <actionVariable key="data" type="String" caption="Updated Item Stringified JSON" />
-                </actionVariables>
-            </property>
-            <property key="onRemoveAction" type="action">
-                <caption>On Remove</caption>
-                <description>Action to be performed when item is removed.</description>
-                <actionVariables>
-                    <actionVariable key="data" type="String" caption="Removed Item Stringified JSON" />
-                </actionVariables>
-            </property>
-             <property key="onInitialDrawCompleteAction" type="action">
-                <caption>On Initial Draw Complete</caption>
-                <description>Action to be performed when the timeline is drawn for the first time.</description>
-            </property>
+            <propertyGroup caption="Mouse">
+                <property key="clickAction" type="action" required="false">
+                    <caption>On click</caption>
+                    <description>Triggered when the timeline is clicked.</description>
+                    <actionVariables>
+                        <actionVariable key="clickedItemID" type="String" caption="Clicked item ID" />
+                        <actionVariable key="clickedGroupID" type="String" caption="Clicked group ID" />
+                        <actionVariable key="clickedTime" type="DateTime" caption="Clicked time" />
+                        <actionVariable key="clickedWhat" type="String" caption="Clicked what" />
+                        <actionVariable key="clickedMarkerID" type="String" caption="Clicked marker ID" />
+                    </actionVariables>
+                </property>
+                <property key="clickScope" type="enumeration" defaultValue="item">
+                    <caption>On click fires for</caption>
+                    <description>Items and markers keeps the action from running when the user clicks empty space, the time axis or a group label, so it can count on an item ID or a marker ID being filled in. Anywhere reports those clicks as well, with empty IDs and the kind of thing that was hit in the "what" variable.</description>
+                    <enumerationValues>
+                        <enumerationValue key="item">Items and markers</enumerationValue>
+                        <enumerationValue key="anywhere">Anywhere on the timeline</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="doubleClickAction" type="action" required="false">
+                    <caption>On double click</caption>
+                    <description>Triggered when the timeline is double clicked.</description>
+                    <actionVariables>
+                        <actionVariable key="doubleClickedItemID" type="String" caption="Double clicked item ID" />
+                        <actionVariable key="doubleClickedGroupID" type="String" caption="Double clicked group ID" />
+                        <actionVariable key="doubleClickedTime" type="DateTime" caption="Double clicked time" />
+                        <actionVariable key="doubleClickedWhat" type="String" caption="Double clicked what" />
+                        <actionVariable key="doubleClickedMarkerID" type="String" caption="Double clicked marker ID" />
+                    </actionVariables>
+                </property>
+                <property key="doubleClickScope" type="enumeration" defaultValue="item">
+                    <caption>On double click fires for</caption>
+                    <description>Items and markers keeps the action from running when the user double clicks empty space, the time axis or a group label, so it can count on an item ID or a marker ID being filled in. Anywhere reports those clicks as well, with empty IDs and the kind of thing that was hit in the "what" variable.</description>
+                    <enumerationValues>
+                        <enumerationValue key="item">Items and markers</enumerationValue>
+                        <enumerationValue key="anywhere">Anywhere on the timeline</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="contextMenuAction" type="action" required="false">
+                    <caption>On context menu</caption>
+                    <description>Triggered on right click. The browser context menu is suppressed wherever this action fires.</description>
+                    <actionVariables>
+                        <actionVariable key="contextItemID" type="String" caption="Item ID" />
+                        <actionVariable key="contextGroupID" type="String" caption="Group ID" />
+                        <actionVariable key="contextTime" type="DateTime" caption="Time" />
+                        <actionVariable key="contextWhat" type="String" caption="What" />
+                    </actionVariables>
+                </property>
+                <property key="contextMenuScope" type="enumeration" defaultValue="item">
+                    <caption>On context menu fires for</caption>
+                    <description>Items only keeps the action from running when the user right clicks empty space, the time axis or a group label, so it can count on an item ID being filled in. Anywhere reports those clicks as well, with an empty item ID and the kind of thing that was hit in the "what" variable.</description>
+                    <enumerationValues>
+                        <enumerationValue key="item">Items only</enumerationValue>
+                        <enumerationValue key="anywhere">Anywhere on the timeline</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="itemOverAction" type="action" required="false">
+                    <caption>On item hover</caption>
+                    <description>Triggered when the mouse enters an item. Use a nanoflow: this runs often, and a run that starts while the previous one is still busy is skipped.</description>
+                    <actionVariables>
+                        <actionVariable key="hoveredItemID" type="String" caption="Hovered item ID" />
+                    </actionVariables>
+                </property>
+                <property key="itemOutAction" type="action" required="false">
+                    <caption>On item hover out</caption>
+                    <description>Triggered when the mouse leaves an item. Use a nanoflow: this runs often, and a run that starts while the previous one is still busy is skipped.</description>
+                    <actionVariables>
+                        <actionVariable key="unhoveredItemID" type="String" caption="Unhovered item ID" />
+                    </actionVariables>
+                </property>
+                <property key="dropAction" type="action" required="false">
+                    <caption>On drop</caption>
+                    <description>Triggered when an external HTML5 drag and drop payload is dropped on the timeline.</description>
+                    <actionVariables>
+                        <actionVariable key="droppedData" type="String" caption="Dropped data" />
+                        <actionVariable key="droppedTime" type="DateTime" caption="Dropped time" />
+                        <actionVariable key="droppedGroupID" type="String" caption="Dropped group ID" />
+                    </actionVariables>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Item">
+                <property key="itemClickAction" type="action" dataSource="VisItemsDataSource" required="false">
+                    <caption>On item click</caption>
+                    <description>Triggered when an item is clicked. Receives the item object itself, so the microflow does not have to retrieve it from an id.</description>
+                </property>
+                <property key="itemDoubleClickAction" type="action" dataSource="VisItemsDataSource" required="false">
+                    <caption>On item double click</caption>
+                    <description>Triggered when an item is double clicked. Receives the item object.</description>
+                </property>
+                <property key="itemContextMenuAction" type="action" dataSource="VisItemsDataSource" required="false">
+                    <caption>On item context menu</caption>
+                    <description>Triggered on right click on an item. Receives the item object. The browser context menu is suppressed wherever this action fires.</description>
+                </property>
+                <property key="itemUpdateAction" type="action" dataSource="VisItemsDataSource" required="false">
+                    <caption>On item update</caption>
+                    <description>Triggered when an editable item is double clicked, so it can be edited on a page. Receives the item object.</description>
+                </property>
+                <property key="itemMoveAction" type="action" dataSource="VisItemsDataSource" required="false">
+                    <caption>On item moved</caption>
+                    <description>Triggered when an item has been dragged or resized. Receives the item object together with where it was dropped, so the new dates can be written straight onto it.</description>
+                    <actionVariables>
+                        <actionVariable key="newStart" type="DateTime" caption="New start" />
+                        <actionVariable key="newEnd" type="DateTime" caption="New end" />
+                        <actionVariable key="newGroupID" type="String" caption="New group ID" />
+                    </actionVariables>
+                </property>
+                <property key="itemRemoveAction" type="action" dataSource="VisItemsDataSource" required="false">
+                    <caption>On item removed</caption>
+                    <description>Triggered when the user deletes an item. Receives the item object.</description>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Timeline">
+                <property key="selectAction" type="action" required="false">
+                    <caption>On select</caption>
+                    <description>Triggered when the selection changes by user interaction, including when it is cleared by clicking empty space.</description>
+                    <actionVariables>
+                        <actionVariable key="selectedItemIDs" type="String" caption="Selected item IDs" />
+                    </actionVariables>
+                </property>
+                <property key="rangeChangedAction" type="action" required="false">
+                    <caption>On window changed</caption>
+                    <description>Triggered after the visible window has moved or zoomed.</description>
+                    <actionVariables>
+                        <actionVariable key="rangeStart" type="DateTime" caption="Window start" />
+                        <actionVariable key="rangeEnd" type="DateTime" caption="Window end" />
+                        <actionVariable key="rangeByUser" type="Boolean" caption="Changed by user" />
+                    </actionVariables>
+                </property>
+                <property key="visibleChangedAction" type="action" required="false">
+                    <caption>On items in view changed</caption>
+                    <description>Triggered when the items or groups inside the visible window change, after moving, zooming, scrolling or a data change. Use a nanoflow: this runs often, and a run that starts while the previous one is still busy is skipped.</description>
+                    <actionVariables>
+                        <actionVariable key="visibleItemIDs" type="String" caption="Item IDs in view" />
+                        <actionVariable key="visibleGroupIDs" type="String" caption="Group IDs in view" />
+                    </actionVariables>
+                </property>
+                <property key="onInitialDrawCompleteAction" type="action" required="false">
+                    <caption>On initial draw complete</caption>
+                    <description>Triggered once, when the timeline has been drawn for the first time.</description>
+                </property>
+                <property key="markerChangeAction" type="action" required="false">
+                    <caption>On marker moving</caption>
+                    <description>Triggered continuously while a marker is dragged. Use a nanoflow: this runs often, and a run that starts while the previous one is still busy is skipped.</description>
+                    <actionVariables>
+                        <actionVariable key="movingMarkerID" type="String" caption="Marker ID" />
+                        <actionVariable key="movingMarkerTime" type="DateTime" caption="Marker time" />
+                    </actionVariables>
+                </property>
+                <property key="markerChangedAction" type="action" required="false">
+                    <caption>On marker moved</caption>
+                    <description>Triggered when a marker has been dropped at its new time.</description>
+                    <actionVariables>
+                        <actionVariable key="movedMarkerID" type="String" caption="Marker ID" />
+                        <actionVariable key="movedMarkerTime" type="DateTime" caption="Marker time" />
+                    </actionVariables>
+                </property>
+                <property key="markerLabelChangingAction" type="action" required="false">
+                    <caption>On marker label changing</caption>
+                    <description>Triggered on every keystroke while an editable marker label is typed in. Use a nanoflow: this runs often, and a run that starts while the previous one is still busy is skipped.</description>
+                    <actionVariables>
+                        <actionVariable key="changingMarkerID" type="String" caption="Marker ID" />
+                        <actionVariable key="changingMarkerLabel" type="String" caption="Marker label" />
+                    </actionVariables>
+                </property>
+                <property key="markerLabelChangedAction" type="action" required="false">
+                    <caption>On marker label changed</caption>
+                    <description>Triggered when the user leaves an editable marker label after changing it.</description>
+                    <actionVariables>
+                        <actionVariable key="changedMarkerID" type="String" caption="Marker ID" />
+                        <actionVariable key="changedMarkerLabel" type="String" caption="Marker label" />
+                    </actionVariables>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Item manipulation">
+                <property key="onAddAction" type="action" required="false">
+                    <caption>On add</caption>
+                    <description>Triggered when the user draws a new item.</description>
+                    <actionVariables>
+                        <actionVariable key="data" type="String" caption="Added item JSON" />
+                        <actionVariable key="addedStart" type="DateTime" caption="Start" />
+                        <actionVariable key="addedEnd" type="DateTime" caption="End" />
+                        <actionVariable key="addedGroupID" type="String" caption="Group ID" />
+                        <actionVariable key="addedContent" type="String" caption="Content" />
+                    </actionVariables>
+                </property>
+                <property key="onUpdateAction" type="action" required="false">
+                    <caption>On update</caption>
+                    <description>Triggered when an editable item is double clicked, so it can be edited on a page.</description>
+                    <actionVariables>
+                        <actionVariable key="data" type="String" caption="Updated item JSON" />
+                        <actionVariable key="updatedItemID" type="String" caption="Item ID" />
+                    </actionVariables>
+                </property>
+                <property key="moveAction" type="action" required="false">
+                    <caption>On move</caption>
+                    <description>Triggered when an item has been dragged or resized to a new position.</description>
+                    <actionVariables>
+                        <actionVariable key="movedItemID" type="String" caption="Item ID" />
+                        <actionVariable key="movedStart" type="DateTime" caption="New start" />
+                        <actionVariable key="movedEnd" type="DateTime" caption="New end" />
+                        <actionVariable key="movedGroupID" type="String" caption="New group ID" />
+                    </actionVariables>
+                </property>
+                <property key="movingAction" type="action" required="false">
+                    <caption>On moving</caption>
+                    <description>Triggered continuously while an item is being dragged. Use a nanoflow: this runs often, and a run that starts while the previous one is still busy is skipped.</description>
+                    <actionVariables>
+                        <actionVariable key="movingItemID" type="String" caption="Item ID" />
+                        <actionVariable key="movingStart" type="DateTime" caption="Start" />
+                        <actionVariable key="movingEnd" type="DateTime" caption="End" />
+                        <actionVariable key="movingGroupID" type="String" caption="Group ID" />
+                    </actionVariables>
+                </property>
+                <property key="onRemoveAction" type="action" required="false">
+                    <caption>On remove</caption>
+                    <description>Triggered when the user deletes an item.</description>
+                    <actionVariables>
+                        <actionVariable key="data" type="String" caption="Removed item JSON" />
+                        <actionVariable key="removedItemID" type="String" caption="Item ID" />
+                    </actionVariables>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Group manipulation">
+                <property key="addGroupAction" type="action" required="false">
+                    <caption>On add group</caption>
+                    <description>Triggered when a new group is created.</description>
+                    <actionVariables>
+                        <actionVariable key="addedGroupJSON" type="String" caption="Added group JSON" />
+                    </actionVariables>
+                </property>
+                <property key="moveGroupAction" type="action" required="false">
+                    <caption>On move group</caption>
+                    <description>Triggered when a group is moved.</description>
+                    <actionVariables>
+                        <actionVariable key="movedGroupID" type="String" caption="Group ID" />
+                    </actionVariables>
+                </property>
+                <property key="removeGroupAction" type="action" required="false">
+                    <caption>On remove group</caption>
+                    <description>Triggered when a group is removed.</description>
+                    <actionVariables>
+                        <actionVariable key="removedGroupID" type="String" caption="Group ID" />
+                    </actionVariables>
+                </property>
+                <property key="groupOrderSwapAction" type="action" required="false">
+                    <caption>On group order swap</caption>
+                    <description>Triggered when two groups swap places by dragging. Persist both order values to make the new order stick.</description>
+                    <actionVariables>
+                        <actionVariable key="swapGroupID" type="String" caption="Group ID" />
+                        <actionVariable key="swapGroupOrderValue" type="Integer" caption="Group order value" />
+                        <actionVariable key="swapOtherGroupID" type="String" caption="Other group ID" />
+                        <actionVariable
+                            key="swapOtherGroupOrderValue"
+                            type="Integer"
+                            caption="Other group order value"
+                        />
+                    </actionVariables>
+                </property>
+                <property key="groupDraggedAction" type="action" required="false">
+                    <caption>On group dragged</caption>
+                    <description>Triggered when a group has been dragged to a new place.</description>
+                    <actionVariables>
+                        <actionVariable key="draggedGroupID" type="String" caption="Group ID" />
+                    </actionVariables>
+                </property>
+            </propertyGroup>
+        </propertyGroup>
+        <propertyGroup caption="Advanced">
+            <propertyGroup caption="Control">
+                <property key="commandAttribute" type="attribute" required="false">
+                    <caption>Command</caption>
+                    <description
+                    >Write a command to this attribute to control the timeline from a microflow: fit, redraw, zoomIn, zoomOut, moveLeft, moveRight, toggleRollingMode, focus:&lt;itemId&gt;, moveTo:&lt;ISO date&gt;, setWindow:&lt;ISO start&gt;|&lt;ISO end&gt;. The widget clears the attribute once the command has run.</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                    </attributeTypes>
+                </property>
+                <property key="animateChanges" type="boolean" defaultValue="true">
+                    <caption>Animate window changes</caption>
+                    <description>Animate window, focus and zoom changes triggered from Mendix.</description>
+                </property>
+                <property key="animationDuration" type="integer" defaultValue="500">
+                    <caption>Animation duration</caption>
+                    <description>Duration of those animations in milliseconds.</description>
+                </property>
+                <property key="animationEasing" type="enumeration" defaultValue="easeInOutQuad">
+                    <caption>Animation easing</caption>
+                    <description>Easing function used for those animations.</description>
+                    <enumerationValues>
+                        <enumerationValue key="linear">Linear</enumerationValue>
+                        <enumerationValue key="easeInQuad">Ease in quad</enumerationValue>
+                        <enumerationValue key="easeOutQuad">Ease out quad</enumerationValue>
+                        <enumerationValue key="easeInOutQuad">Ease in out quad</enumerationValue>
+                        <enumerationValue key="easeInCubic">Ease in cubic</enumerationValue>
+                        <enumerationValue key="easeOutCubic">Ease out cubic</enumerationValue>
+                        <enumerationValue key="easeInOutCubic">Ease in out cubic</enumerationValue>
+                        <enumerationValue key="easeInQuart">Ease in quart</enumerationValue>
+                        <enumerationValue key="easeOutQuart">Ease out quart</enumerationValue>
+                        <enumerationValue key="easeInOutQuart">Ease in out quart</enumerationValue>
+                        <enumerationValue key="easeInQuint">Ease in quint</enumerationValue>
+                        <enumerationValue key="easeOutQuint">Ease out quint</enumerationValue>
+                        <enumerationValue key="easeInOutQuint">Ease in out quint</enumerationValue>
+                    </enumerationValues>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Escape hatches">
+                <property key="dataAttributes" type="expression" required="false">
+                    <caption>Data attributes</caption>
+                    <description>Copy item fields onto the item element as data- attributes. Use 'all' or a comma separated list such as 'id,start,end'.</description>
+                    <returnType type="String" />
+                </property>
+                <property key="xssDisabled" type="boolean" defaultValue="false">
+                    <caption>Disable XSS protection</caption>
+                    <description>Render item and group content as raw HTML. Only enable this when the content is trusted.</description>
+                </property>
+                <property key="showLoadingOverlay" type="boolean" defaultValue="true">
+                    <caption>Show loading overlay</caption>
+                    <description>Dim the timeline and show a spinner while the data sources are loading.</description>
+                </property>
+                <property key="optionsJson" type="expression" required="false">
+                    <caption>Extra options (JSON)</caption>
+                    <description>JSON object merged into the vis-timeline options after all properties above, for any option that is not exposed as a property.</description>
+                    <returnType type="String" />
+                </property>
+            </propertyGroup>
         </propertyGroup>
     </properties>
 </widget>

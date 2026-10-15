@@ -1,6 +1,73 @@
-/*
-Place your custom CSS here
-*/
-.widget-hello-world {
+/* Wrapper around the element vis-timeline draws into. Positioned so the loading overlay and the
+   tooltips vis appends to the timeline root stay inside the widget. */
+.vis-timeline-widget {
+    position: relative;
+}
 
+.vis-timeline-widget__canvas {
+    width: 100%;
+}
+
+/* vis-timeline appends its tooltip to the timeline root, which hides its overflow, so a tooltip
+   taller than the space above or below the item was cut off at the edge of the timeline. The
+   panels inside the root clip the items, axis and labels themselves, so the root can let the
+   tooltip out. */
+.vis-timeline-widget .vis-timeline {
+    overflow: visible;
+}
+
+.vis-timeline-widget .vis-tooltip {
+    z-index: 10;
+}
+
+/* Mendix widgets rendered inside an item, group label or tooltip live in a container element that
+   vis-timeline owns. `display: contents` keeps that container out of the layout, so vis measures
+   the widget content itself instead of an extra wrapper box. */
+.vis-timeline-widget-template {
+    display: contents;
+}
+
+.vis-timeline-widget--loading .vis-timeline-widget__canvas {
+    opacity: 0.5;
+}
+
+.vis-timeline-widget__overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.vis-timeline-widget__spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    opacity: 0.6;
+    animation: vis-timeline-widget-spin 0.8s linear infinite;
+}
+
+@keyframes vis-timeline-widget-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vis-timeline-widget__spinner {
+        animation: none;
+    }
+}
+
+/* A marker whose label was cleared keeps an empty element behind; hide it unless it can be typed in. */
+.vis-timeline-widget .vis-custom-time-marker:empty:not([contenteditable="true"]) {
+    display: none;
+}
+
+.vis-timeline-widget .vis-custom-time-marker[contenteditable="true"] {
+    min-width: 2em;
+    cursor: text;
 }

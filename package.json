@@ -1,12 +1,12 @@
 {
   "name": "vistimeline",
   "widgetName": "VisTimeline",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Vis Timeline Mendix Pluggable Widget based on https://github.com/visjs/vis-timeline.",
-  "copyright": "JL 2026",
-  "author": "JL",
+  "copyright": "Stoneworx 2026",
+  "author": "Stoneworx",
   "engines": {
-    "node": ">=16"
+    "node": ">=20"
   },
   "license": "MIT",
   "config": {
@@ -22,7 +22,8 @@
     "lint": "pluggable-widgets-tools lint",
     "lint:fix": "pluggable-widgets-tools lint:fix",
     "prerelease": "npm run lint",
-    "release": "pluggable-widgets-tools release:web"
+    "release": "pluggable-widgets-tools release:web",
+    "test": "pluggable-widgets-tools test:unit:web"
   },
   "devDependencies": {
     "@mendix/pluggable-widgets-tools": "^11.8.1",
@@ -30,7 +31,7 @@
   },
   "dependencies": {
     "classnames": "^2.5.1",
-    "vis-timeline": "^8.5.0"
+    "vis-timeline": "^8.5.4"
   },
   "resolutions": {
     "react": "19.0.0",

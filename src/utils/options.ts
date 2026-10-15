@@ -1,0 +1,239 @@
+import { TimelineOptions } from "vis-timeline/standalone";
+import { VisTimelineContainerProps } from "../../typings/VisTimelineProps";
+import { buildHiddenDates } from "./data";
+import { deepMerge, dynamicBoolean, dynamicNumber, dynamicText, parseJsonObject } from "./values";
+import { defaultLabelFormats, LabelFormats, resolveLocale, VisMoment } from "./vis";
+
+/**
+ * Everything vis-timeline can be told through plain data. Function valued options (templates,
+ * snapping, manipulation callbacks) are registered once when the timeline is created, because they
+ * read the current props through a ref and therefore never go stale.
+ */
+export function buildStaticOptions(props: VisTimelineContainerProps): TimelineOptions {
+    const options: TimelineOptions = {
+        align: props.align,
+        autoResize: props.autoResize,
+        clickToUse: props.clickToUse,
+        editable: {
+            add: dynamicBoolean(props.editableAdd),
+            remove: dynamicBoolean(props.editableRemove),
+            updateTime: dynamicBoolean(props.editableUpdateTime),
+            updateGroup: dynamicBoolean(props.editableUpdateGroup),
+            overrideItems: props.editableOverrideItems
+        },
+        groupEditable: {
+            add: dynamicBoolean(props.groupEditableAdd),
+            remove: dynamicBoolean(props.groupEditableRemove),
+            order: dynamicBoolean(props.groupEditableOrder)
+        },
+        groupHeightMode: props.groupHeightMode,
+        horizontalScroll: props.horizontalScroll,
+        horizontalScrollInvert: props.horizontalScrollInvert,
+        itemsAlwaysDraggable: {
+            item: props.itemsAlwaysDraggableItem,
+            range: props.itemsAlwaysDraggableRange
+        },
+        longSelectPressTime: props.longSelectPressTime,
+        margin: {
+            axis: props.marginAxis,
+            item: { horizontal: props.marginItemHorizontal, vertical: props.marginItemVertical }
+        },
+        maxMinorChars: props.maxMinorChars,
+        moveable: props.moveable,
+        // Picking Multi on the selection property is a clear enough statement of intent that the
+        // timeline should let the user make one.
+        multiselect: props.multiselect || props.itemSelection?.type === "Multi",
+        multiselectPerGroup: props.multiselectPerGroup,
+        orientation: { axis: props.orientationAxis, item: props.orientationItem },
+        preferZoom: props.preferZoom,
+        rollingMode: { follow: props.rollingMode, offset: Number(props.rollingModeOffset.toString()) },
+        rtl: props.rtl,
+        selectable: props.selectable,
+        sequentialSelection: props.sequentialSelection,
+        showCurrentTime: props.showCurrentTime,
+        showMajorLabels: props.showMajorLabels,
+        showMinorLabels: props.showMinorLabels,
+        showTooltips: props.showTooltips,
+        showWeekScale: props.showWeekScale,
+        stack: props.stack,
+        stackSubgroups: props.stackSubgroups,
+        tooltip: {
+            followMouse: props.tooltipFollowMouse,
+            overflowMethod: props.tooltipOverflowMethod,
+            delay: props.tooltipDelay
+        },
+        tooltipOnItemUpdateTime: props.tooltipOnItemUpdateTime,
+        verticalScroll: props.verticalScroll,
+        zoomable: props.zoomable,
+        zoomFriction: props.zoomFriction,
+        zoomKey: props.zoomKey === "none" ? "" : props.zoomKey,
+        xss: { disabled: props.xssDisabled }
+    };
+
+    if (props.defaultItemType !== "auto") {
+        options.type = props.defaultItemType;
+    }
+    if (props.groupOrderMode !== "none") {
+        options.groupOrder = props.groupOrderMode;
+    }
+    // vis-timeline only stacks by a field when it is given an order function; without it the
+    // Order value attribute was read but never used.
+    if (props.itemOrderValue) {
+        options.order = (a: any, b: any) => (a?.orderValue ?? 0) - (b?.orderValue ?? 0);
+    }
+    if (props.timeAxisScale !== "auto") {
+        options.timeAxis = { scale: props.timeAxisScale, step: props.timeAxisStep };
+    }
+    if (props.clusterItems) {
+        options.cluster = {
+            maxItems: props.clusterMaxItems,
+            fitOnDoubleClick: props.clusterFitOnDoubleClick,
+            showStipes: props.clusterShowStipes,
+            ...(dynamicText(props.clusterTitleTemplate) !== undefined && {
+                titleTemplate: dynamicText(props.clusterTitleTemplate)
+            })
+        };
+    }
+
+    assignIfDefined(options, "height", dynamicText(props.height));
+    assignIfDefined(options, "minHeight", dynamicText(props.minHeight));
+    assignIfDefined(options, "maxHeight", dynamicText(props.maxHeight));
+    assignIfDefined(options, "width", dynamicText(props.width));
+    assignIfDefined(options, "min", props.minDate?.value);
+    assignIfDefined(options, "max", props.maxDate?.value);
+    assignIfDefined(options, "zoomMin", dynamicNumber(props.zoomMin));
+    assignIfDefined(options, "zoomMax", dynamicNumber(props.zoomMax));
+
+    // The same resolved locale drives the axis labels (see the moment factory) and vis-timeline's
+    // own wording, so the two can never end up in different languages.
+    const locale = resolveLocale(dynamicText(props.locale));
+    const currentLabel = dynamicText(props.localeCurrentLabel);
+    const timeLabel = dynamicText(props.localeTimeLabel);
+    options.locale = locale;
+    if (currentLabel !== undefined || timeLabel !== undefined) {
+        options.locales = {
+            [locale]: {
+                ...(currentLabel !== undefined && { current: currentLabel }),
+                ...(timeLabel !== undefined && { time: timeLabel })
+            }
+        };
+    }
+
+    const minorLabels = parseJsonObject(dynamicText(props.formatMinorLabels), "Minor label formats");
+    const majorLabels = parseJsonObject(dynamicText(props.formatMajorLabels), "Major label formats");
+    if (defaultLabelFormats) {
+        // Hand over functions rather than objects. The time axis shallow copies vis-timeline's
+        // default formats and deep merges objects into them, which rewrites the defaults shared by
+        // every timeline on the page; a function is assigned instead, so each timeline keeps its own.
+        options.format = {
+            minorLabels: labelFormatter({ ...defaultLabelFormats.minorLabels, ...(minorLabels as LabelFormats) }),
+            majorLabels: labelFormatter({ ...defaultLabelFormats.majorLabels, ...(majorLabels as LabelFormats) })
+        } as unknown as TimelineOptions["format"];
+    } else if (minorLabels || majorLabels) {
+        options.format = { ...(minorLabels && { minorLabels }), ...(majorLabels && { majorLabels }) };
+    }
+
+    const dataAttributes = dynamicText(props.dataAttributes);
+    if (dataAttributes !== undefined) {
+        options.dataAttributes =
+            dataAttributes.trim().toLowerCase() === "all"
+                ? "all"
+                : dataAttributes
+                      .split(",")
+                      .map(name => name.trim())
+                      .filter(name => name.length > 0);
+    }
+
+    const hiddenDates = buildHiddenDates(props);
+    if (hiddenDates.length > 0) {
+        options.hiddenDates = hiddenDates;
+    }
+
+    const extra = parseJsonObject(dynamicText(props.optionsJson), "Extra options (JSON)");
+    if (extra) {
+        // Turning off XSS protection sends item, group, tooltip and marker content to innerHTML
+        // unfiltered, so only the explicit property may do it.
+        if ("xss" in extra) {
+            console.warn('VisTimeline: "xss" is ignored in Extra options (JSON), use the XSS protection property.');
+            delete extra.xss;
+        }
+        deepMerge(options as Record<string, unknown>, extra);
+    }
+
+    return options;
+}
+
+/**
+ * Says when the static options changed. The label formats and the order are handed to vis-timeline
+ * as functions, which JSON.stringify leaves out, so the values they are built from are added.
+ */
+export function optionsSignature(props: VisTimelineContainerProps, options: TimelineOptions): string {
+    return JSON.stringify([
+        options,
+        dynamicText(props.formatMinorLabels) ?? null,
+        dynamicText(props.formatMajorLabels) ?? null,
+        typeof options.order === "function"
+    ]);
+}
+
+/**
+ * What vis-timeline falls back to for the options that are only handed over while they have a value.
+ * Its setOptions only copies the keys it is given, so leaving one out keeps the old value: a cleared
+ * Min date would keep limiting the window, and the last hidden period would stay hidden.
+ */
+const CLEARED_OPTIONS: Array<[string, unknown, (props: VisTimelineContainerProps) => { status: string } | undefined]> =
+    [
+        ["height", null, props => props.height],
+        ["minHeight", null, props => props.minHeight],
+        ["maxHeight", null, props => props.maxHeight],
+        ["width", "100%", props => props.width],
+        ["min", null, props => props.minDate],
+        ["max", null, props => props.maxDate],
+        ["zoomMin", 10, props => props.zoomMin],
+        ["zoomMax", 1000 * 60 * 60 * 24 * 365 * 10000, props => props.zoomMax],
+        ["hiddenDates", [], props => props.hiddenDatesDataSource]
+    ];
+
+/**
+ * Adds vis-timeline's own default for every option the previous options set and the next ones leave
+ * out. A value that is only missing because Mendix is still loading it keeps its previous value, so
+ * a refresh does not flash the limits or the hidden periods off. Returns the options to hand to
+ * vis-timeline, and the ones to compare the following change against.
+ */
+export function withClearedOptions(
+    props: VisTimelineContainerProps,
+    previous: TimelineOptions | undefined,
+    next: TimelineOptions
+): { options: TimelineOptions; applied: TimelineOptions } {
+    const options: Record<string, unknown> = { ...next };
+    const applied: Record<string, unknown> = { ...next };
+    for (const [key, value, source] of CLEARED_OPTIONS) {
+        if (!previous || !(key in previous) || key in next) {
+            continue;
+        }
+        if (source(props)?.status === "loading") {
+            options[key] = applied[key] = (previous as Record<string, unknown>)[key];
+        } else {
+            options[key] = value;
+        }
+    }
+    return { options: options as TimelineOptions, applied: applied as TimelineOptions };
+}
+
+function assignIfDefined<K extends keyof TimelineOptions>(
+    options: TimelineOptions,
+    key: K,
+    value: TimelineOptions[K] | undefined
+): void {
+    if (value !== undefined) {
+        options[key] = value;
+    }
+}
+
+/** Formats a label with the moment format configured for the scale the time axis is showing. */
+function labelFormatter(formats: LabelFormats): (date: VisMoment, scale: string) => string {
+    return (date, scale) => {
+        const format = formats[scale];
+        return format ? date.format(format) : "";
+    };
+}
