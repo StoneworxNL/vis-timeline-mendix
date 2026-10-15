@@ -1,3 +1,5 @@
 ../
 typings/
 dist/
+# Studio Pro shows caption and description text exactly as written, so it must not be wrapped.
+src/VisTimeline.xml

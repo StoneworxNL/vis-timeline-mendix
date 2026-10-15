@@ -36,6 +36,8 @@ All notable changes to this widget are documented here. The format follows
 -   `fit`, `focus`, `moveTo`, `setWindow` and the move commands leave rolling mode first instead of fighting it, and
     zooming while rolling no longer stutters.
 -   Tooltips are no longer cut off at the edge of the timeline.
+-   Property descriptions and option captions in the Studio Pro dialog no longer show stray line breaks, and the
+    first option of **On move behaviour** and the second of **On remove behaviour** show their captions again.
 
 ### Security
 

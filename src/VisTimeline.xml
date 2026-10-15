@@ -25,9 +25,7 @@
                 </property>
                 <property key="ItemID" type="attribute" dataSource="VisItemsDataSource">
                     <caption>Item ID</caption>
-                    <description>
-                        Unique identifier of the item. Used to match selections, events and group references.
-                    </description>
+                    <description>Unique identifier of the item. Used to match selections, events and group references.</description>
                     <attributeTypes>
                         <attributeType name="String" />
                         <attributeType name="Integer" />
@@ -74,10 +72,7 @@
                 </property>
                 <property key="itemOrderValue" type="attribute" dataSource="VisItemsDataSource" required="false">
                     <caption>Order value</caption>
-                    <description>
-                        Sorts items within a group, lowest first. Also usable as the group's Subgroup order field under
-                        the name orderValue.
-                    </description>
+                    <description>Sorts items within a group, lowest first. Also usable as the group's Subgroup order field under the name orderValue.</description>
                     <attributeTypes>
                         <attributeType name="Integer" />
                         <attributeType name="Long" />
@@ -88,10 +83,7 @@
             <propertyGroup caption="Content">
                 <property key="itemContentType" type="enumeration" defaultValue="attribute">
                     <caption>Content type</caption>
-                    <description>
-                        Attribute renders plain text, or HTML when XSS protection is disabled. Custom renders the
-                        widgets you drop below, so any Mendix widget can be used as an item template.
-                    </description>
+                    <description>Attribute renders plain text, or HTML when XSS protection is disabled. Custom renders the widgets you drop below, so any Mendix widget can be used as an item template.</description>
                     <enumerationValues>
                         <enumerationValue key="attribute">Attribute</enumerationValue>
                         <enumerationValue key="custom">Custom (widgets)</enumerationValue>
@@ -110,18 +102,13 @@
                 </property>
                 <property key="itemVisibleFrameWidgets" type="widgets" dataSource="VisItemsDataSource" required="false">
                     <caption>Visible frame widgets</caption>
-                    <description>
-                        Rendered in the visible part of a range item, so the content stays readable when the item is
-                        scrolled partly out of view.
-                    </description>
+                    <description>Rendered in the visible part of a range item, so the content stays readable when the item is scrolled partly out of view.</description>
                 </property>
             </propertyGroup>
             <propertyGroup caption="Item styling">
                 <property key="Type" type="attribute" dataSource="VisItemsDataSource" required="false">
                     <caption>Type</caption>
-                    <description>
-                        box, point, range or background. Falls back to the default item type when empty.
-                    </description>
+                    <description>box, point, range or background. Falls back to the default item type when empty.</description>
                     <attributeTypes>
                         <attributeType name="Enum" />
                         <attributeType name="String" />
@@ -136,9 +123,7 @@
                 </property>
                 <property key="itemStyle" type="attribute" dataSource="VisItemsDataSource" required="false">
                     <caption>Style</caption>
-                    <description>
-                        Inline CSS applied to the item element, for example: color: white; background-color: red;
-                    </description>
+                    <description>Inline CSS applied to the item element, for example: color: white; background-color: red;</description>
                     <attributeTypes>
                         <attributeType name="String" />
                     </attributeTypes>
@@ -153,10 +138,7 @@
                 </property>
                 <property key="itemLimitSize" type="attribute" dataSource="VisItemsDataSource" required="false">
                     <caption>Limit size</caption>
-                    <description>
-                        When false the item element is not clipped to the visible window. Needed for very wide range
-                        items with absolutely positioned content.
-                    </description>
+                    <description>When false the item element is not clipped to the visible window. Needed for very wide range items with absolutely positioned content.</description>
                     <attributeTypes>
                         <attributeType name="Boolean" />
                     </attributeTypes>
@@ -165,9 +147,7 @@
             <propertyGroup caption="Item tooltip">
                 <property key="itemTooltipType" type="enumeration" defaultValue="none">
                     <caption>Tooltip type</caption>
-                    <description>
-                        Choose between no tooltip, a text template, or any Mendix widgets as tooltip content.
-                    </description>
+                    <description>Choose between no tooltip, a text template, or any Mendix widgets as tooltip content.</description>
                     <enumerationValues>
                         <enumerationValue key="none">None</enumerationValue>
                         <enumerationValue key="text">Text template</enumerationValue>
@@ -186,10 +166,7 @@
             <propertyGroup caption="Item editability">
                 <property key="itemEditable" type="attribute" dataSource="VisItemsDataSource" required="false">
                     <caption>Editable</caption>
-                    <description>
-                        Overrides the timeline wide editability for this item. Ignored when Timeline settings override
-                        items is on.
-                    </description>
+                    <description>Overrides the timeline wide editability for this item. Ignored when Timeline settings override items is on.</description>
                     <attributeTypes>
                         <attributeType name="Boolean" />
                     </attributeTypes>
@@ -238,9 +215,7 @@
             <propertyGroup caption="Data source">
                 <property key="VisGroupsDataSource" type="datasource" isList="true" required="false">
                     <caption>Groups</caption>
-                    <description>
-                        Optional list of objects rendered as rows. Leave empty for an ungrouped timeline.
-                    </description>
+                    <description>Optional list of objects rendered as rows. Leave empty for an ungrouped timeline.</description>
                 </property>
                 <property key="GroupIDAttr" type="attribute" dataSource="VisGroupsDataSource" required="false">
                     <caption>Group ID</caption>
@@ -278,10 +253,7 @@
             <propertyGroup caption="Group content">
                 <property key="groupContentType" type="enumeration" defaultValue="attribute">
                     <caption>Group content type</caption>
-                    <description>
-                        Attribute renders plain text, or HTML when XSS protection is disabled. Custom renders the
-                        widgets you drop below.
-                    </description>
+                    <description>Attribute renders plain text, or HTML when XSS protection is disabled. Custom renders the widgets you drop below.</description>
                     <enumerationValues>
                         <enumerationValue key="attribute">Attribute</enumerationValue>
                         <enumerationValue key="custom">Custom (widgets)</enumerationValue>
@@ -336,9 +308,7 @@
             <propertyGroup caption="Group ordering">
                 <property key="GroupValue" type="attribute" dataSource="VisGroupsDataSource" required="false">
                     <caption>Order value</caption>
-                    <description>
-                        Numeric value the groups are sorted by when Group order is set to Order value.
-                    </description>
+                    <description>Numeric value the groups are sorted by when Group order is set to Order value.</description>
                     <attributeTypes>
                         <attributeType name="Integer" />
                         <attributeType name="Long" />
@@ -356,10 +326,7 @@
                 </property>
                 <property key="groupSubgroupOrder" type="attribute" dataSource="VisGroupsDataSource" required="false">
                     <caption>Subgroup order field</caption>
-                    <description>
-                        Name of the item field the subgroups of this group are sorted by, for example orderValue, start
-                        or content.
-                    </description>
+                    <description>Name of the item field the subgroups of this group are sorted by, for example orderValue, start or content.</description>
                     <attributeTypes>
                         <attributeType name="String" />
                     </attributeTypes>
@@ -427,10 +394,7 @@
                 </property>
                 <property key="markerId" type="attribute" dataSource="markersDataSource" required="false">
                     <caption>Marker ID</caption>
-                    <description>
-                        Unique identifier of the marker. It is also added as a CSS class on the bar, so markers can be
-                        styled individually.
-                    </description>
+                    <description>Unique identifier of the marker. It is also added as a CSS class on the bar, so markers can be styled individually.</description>
                     <attributeTypes>
                         <attributeType name="String" />
                         <attributeType name="Integer" />
@@ -452,16 +416,11 @@
                 </property>
                 <property key="markerLabel" type="textTemplate" dataSource="markersDataSource" required="false">
                     <caption>Marker label</caption>
-                    <description>
-                        Text shown on the bar itself, at the top of the timeline. Leave empty for a plain bar.
-                    </description>
+                    <description>Text shown on the bar itself, at the top of the timeline. Leave empty for a plain bar.</description>
                 </property>
                 <property key="markerLabelEditable" type="attribute" dataSource="markersDataSource" required="false">
                     <caption>Marker label editable</caption>
-                    <description>
-                        Lets the user type in the label. The text is handed to On marker label changing and On marker
-                        label changed; store it in the attribute behind the label to keep it.
-                    </description>
+                    <description>Lets the user type in the label. The text is handed to On marker label changing and On marker label changed; store it in the attribute behind the label to keep it.</description>
                     <attributeTypes>
                         <attributeType name="Boolean" />
                     </attributeTypes>
@@ -472,9 +431,7 @@
             <propertyGroup caption="Size">
                 <property key="height" type="expression" required="false">
                     <caption>Height</caption>
-                    <description>
-                        CSS height of the timeline, for example '400px'. Leave empty to size to the content.
-                    </description>
+                    <description>CSS height of the timeline, for example '400px'. Leave empty to size to the content.</description>
                     <returnType type="String" />
                 </property>
                 <property key="minHeight" type="expression" required="false">
@@ -528,10 +485,7 @@
                 </property>
                 <property key="defaultItemType" type="enumeration" defaultValue="auto">
                     <caption>Default item type</caption>
-                    <description>
-                        Item type used for items that do not specify one. Auto means box without an end date and range
-                        with one.
-                    </description>
+                    <description>Item type used for items that do not specify one. Auto means box without an end date and range with one.</description>
                     <enumerationValues>
                         <enumerationValue key="auto">Auto</enumerationValue>
                         <enumerationValue key="box">Box</enumerationValue>
@@ -550,10 +504,7 @@
                 </property>
                 <property key="groupHeightMode" type="enumeration" defaultValue="auto">
                     <caption>Group height mode</caption>
-                    <description>
-                        Auto sizes each group to its content, Fixed gives every group the same height, Fit items sizes
-                        to the visible items only.
-                    </description>
+                    <description>Auto sizes each group to its content, Fixed gives every group the same height, Fit items sizes to the visible items only.</description>
                     <enumerationValues>
                         <enumerationValue key="auto">Auto</enumerationValue>
                         <enumerationValue key="fixed">Fixed</enumerationValue>
@@ -617,9 +568,7 @@
                 </property>
                 <property key="tooltipOnItemUpdateTime" type="boolean" defaultValue="false">
                     <caption>Tooltip while dragging</caption>
-                    <description>
-                        Show the item dates in a tooltip while the item is being dragged or resized.
-                    </description>
+                    <description>Show the item dates in a tooltip while the item is being dragged or resized.</description>
                 </property>
             </propertyGroup>
         </propertyGroup>
@@ -627,16 +576,12 @@
             <propertyGroup caption="Visible window">
                 <property key="windowStart" type="expression" required="false">
                     <caption>Window start</caption>
-                    <description>
-                        Start of the visible window. The window is moved whenever this value changes.
-                    </description>
+                    <description>Start of the visible window. The window is moved whenever this value changes.</description>
                     <returnType type="DateTime" />
                 </property>
                 <property key="windowEnd" type="expression" required="false">
                     <caption>Window end</caption>
-                    <description>
-                        End of the visible window. The window is moved whenever this value changes.
-                    </description>
+                    <description>End of the visible window. The window is moved whenever this value changes.</description>
                     <returnType type="DateTime" />
                 </property>
                 <property key="fitOnDataChange" type="enumeration" defaultValue="firstLoad">
@@ -662,9 +607,7 @@
             <propertyGroup caption="Scale">
                 <property key="timeAxisScale" type="enumeration" defaultValue="auto">
                     <caption>Fixed scale</caption>
-                    <description>
-                        Forces a fixed scale on the time axis instead of adapting to the zoom level.
-                    </description>
+                    <description>Forces a fixed scale on the time axis instead of adapting to the zoom level.</description>
                     <enumerationValues>
                         <enumerationValue key="auto">Auto</enumerationValue>
                         <enumerationValue key="millisecond">Millisecond</enumerationValue>
@@ -684,16 +627,12 @@
                 </property>
                 <property key="formatMinorLabels" type="expression" required="false">
                     <caption>Minor label formats</caption>
-                    <description>
-                        JSON object with moment.js formats per scale, for example {"weekday":"ddd D","day":"D"}.
-                    </description>
+                    <description>JSON object with moment.js formats per scale, for example {"weekday":"ddd D","day":"D"}.</description>
                     <returnType type="String" />
                 </property>
                 <property key="formatMajorLabels" type="expression" required="false">
                     <caption>Major label formats</caption>
-                    <description>
-                        JSON object with moment.js formats per scale, for example {"day":"MMMM YYYY"}.
-                    </description>
+                    <description>JSON object with moment.js formats per scale, for example {"day":"MMMM YYYY"}.</description>
                     <returnType type="String" />
                 </property>
             </propertyGroup>
@@ -715,19 +654,14 @@
                 </property>
                 <property key="timeZoneOffset" type="expression" required="false">
                     <caption>Time zone offset</caption>
-                    <description>
-                        Renders all dates in a fixed offset instead of the browser time zone, for example '+05:30' or
-                        '-08:00'.
-                    </description>
+                    <description>Renders all dates in a fixed offset instead of the browser time zone, for example '+05:30' or '-08:00'.</description>
                     <returnType type="String" />
                 </property>
             </propertyGroup>
             <propertyGroup caption="Hidden periods">
                 <property key="hiddenDatesDataSource" type="datasource" isList="true" required="false">
                     <caption>Hidden periods</caption>
-                    <description>
-                        Optional list of periods that are cut out of the timeline, such as weekends or nights.
-                    </description>
+                    <description>Optional list of periods that are cut out of the timeline, such as weekends or nights.</description>
                 </property>
                 <property key="hiddenDateStart" type="attribute" dataSource="hiddenDatesDataSource" required="false">
                     <caption>Hidden period start</caption>
@@ -787,21 +721,14 @@
                 </property>
                 <property key="selectedItemIds" type="attribute" required="false">
                     <caption>Selected item IDs</caption>
-                    <description>
-                        Two way bound, comma separated list of selected item IDs. Write to it to change the selection
-                        from a microflow.
-                    </description>
+                    <description>Two way bound, comma separated list of selected item IDs. Write to it to change the selection from a microflow.</description>
                     <attributeTypes>
                         <attributeType name="String" />
                     </attributeTypes>
                 </property>
                 <property key="itemSelection" type="selection" dataSource="VisItemsDataSource">
                     <caption>Selection</caption>
-                    <description>
-                        Binds the selection to the item objects themselves, so a microflow or another widget on the
-                        page works with the objects rather than with a list of ids. Choosing Multi also switches
-                        multi select on.
-                    </description>
+                    <description>Binds the selection to the item objects themselves, so a microflow or another widget on the page works with the objects rather than with a list of ids. Choosing Multi also switches multi select on.</description>
                     <selectionTypes>
                         <selectionType name="None" />
                         <selectionType name="Single" />
@@ -810,9 +737,7 @@
                 </property>
                 <property key="focusOnSelection" type="boolean" defaultValue="false">
                     <caption>Focus on selection</caption>
-                    <description>
-                        Move the window to the selected items when the selection is set from Mendix.
-                    </description>
+                    <description>Move the window to the selected items when the selection is set from Mendix.</description>
                 </property>
             </propertyGroup>
             <propertyGroup caption="Move and zoom">
@@ -841,9 +766,7 @@
                 </property>
                 <property key="zoomMin" type="expression" required="false">
                     <caption>Minimum zoom interval</caption>
-                    <description>
-                        Smallest visible interval in milliseconds, for example 3600000 for one hour.
-                    </description>
+                    <description>Smallest visible interval in milliseconds, for example 3600000 for one hour.</description>
                     <returnType type="Integer" />
                 </property>
                 <property key="zoomMax" type="expression" required="false">
@@ -865,23 +788,17 @@
                 </property>
                 <property key="verticalScroll" type="boolean" defaultValue="false">
                     <caption>Vertical scroll</caption>
-                    <description>
-                        Scroll the groups vertically with the scroll wheel. Combine with a maximum height.
-                    </description>
+                    <description>Scroll the groups vertically with the scroll wheel. Combine with a maximum height.</description>
                 </property>
                 <property key="clickToUse" type="boolean" defaultValue="false">
                     <caption>Click to use</caption>
-                    <description>
-                        Only react to mouse and touch events after the timeline has been clicked once.
-                    </description>
+                    <description>Only react to mouse and touch events after the timeline has been clicked once.</description>
                 </property>
             </propertyGroup>
             <propertyGroup caption="Clustering">
                 <property key="clusterItems" type="boolean" defaultValue="false">
                     <caption>Cluster items</caption>
-                    <description>
-                        Merge items that are close together into a single cluster when zoomed out.
-                    </description>
+                    <description>Merge items that are close together into a single cluster when zoomed out.</description>
                 </property>
                 <property key="clusterMaxItems" type="integer" defaultValue="5">
                     <caption>Cluster maximum items</caption>
@@ -926,9 +843,7 @@
                 </property>
                 <property key="editableOverrideItems" type="boolean" defaultValue="false">
                     <caption>Timeline settings override items</caption>
-                    <description>
-                        Ignore the per item editability attributes and use these timeline wide settings for every item.
-                    </description>
+                    <description>Ignore the per item editability attributes and use these timeline wide settings for every item.</description>
                 </property>
                 <property key="itemsAlwaysDraggableItem" type="boolean" defaultValue="false">
                     <caption>Items always draggable</caption>
@@ -952,10 +867,7 @@
                 </property>
                 <property key="groupEditableOrder" type="expression" defaultValue="true">
                     <caption>Allow reorder groups</caption>
-                    <description>
-                        Allow dragging groups to reorder them. Requires an Order value and Group order set to Order
-                        value.
-                    </description>
+                    <description>Allow dragging groups to reorder them. Requires an Order value and Group order set to Order value.</description>
                     <returnType type="Boolean" />
                 </property>
             </propertyGroup>
@@ -967,19 +879,13 @@
                 </property>
                 <property key="snapMinutes" type="integer" defaultValue="0">
                     <caption>Snap to minutes</caption>
-                    <description>
-                        Snap to a fixed number of minutes, for example 15. Leave at 0 to use the default snapping of
-                        vis-timeline.
-                    </description>
+                    <description>Snap to a fixed number of minutes, for example 15. Leave at 0 to use the default snapping of vis-timeline.</description>
                 </property>
             </propertyGroup>
             <propertyGroup caption="Behaviour">
                 <property key="addMode" type="enumeration" defaultValue="callAction">
                     <caption>On add behaviour</caption>
-                    <description>
-                        Whether a newly drawn item is kept on screen, or discarded so it can be recreated by the On add
-                        action through the data source.
-                    </description>
+                    <description>Whether a newly drawn item is kept on screen, or discarded so it can be recreated by the On add action through the data source.</description>
                     <enumerationValues>
                         <enumerationValue key="callAction">Discard and let the action create it</enumerationValue>
                         <enumerationValue key="addAndCallAction">Keep on screen and call the action</enumerationValue>
@@ -987,28 +893,18 @@
                 </property>
                 <property key="moveMode" type="enumeration" defaultValue="moveAndCallAction">
                     <caption>On move behaviour</caption>
-                    <description>
-                        Whether a moved item keeps its new position, or snaps back so it can be repositioned by the On
-                        move action through the data source.
-                    </description>
+                    <description>Whether a moved item keeps its new position, or snaps back so it can be repositioned by the On move action through the data source.</description>
                     <enumerationValues>
-                        <enumerationValue key="moveAndCallAction">
-                            Keep new position and call the action
-                        </enumerationValue>
+                        <enumerationValue key="moveAndCallAction">Keep new position and call the action</enumerationValue>
                         <enumerationValue key="callAction">Revert and let the action move it</enumerationValue>
                     </enumerationValues>
                 </property>
                 <property key="removeMode" type="enumeration" defaultValue="callAction">
                     <caption>On remove behaviour</caption>
-                    <description>
-                        Whether a deleted item disappears immediately, or stays until the On remove action deletes it
-                        through the data source.
-                    </description>
+                    <description>Whether a deleted item disappears immediately, or stays until the On remove action deletes it through the data source.</description>
                     <enumerationValues>
                         <enumerationValue key="callAction">Keep and let the action delete it</enumerationValue>
-                        <enumerationValue key="removeAndCallAction">
-                            Remove immediately and call the action
-                        </enumerationValue>
+                        <enumerationValue key="removeAndCallAction">Remove immediately and call the action</enumerationValue>
                     </enumerationValues>
                 </property>
             </propertyGroup>
@@ -1028,12 +924,7 @@
                 </property>
                 <property key="clickScope" type="enumeration" defaultValue="item">
                     <caption>On click fires for</caption>
-                    <description>
-                        Items and markers keeps the action from running when the user clicks empty space, the time axis
-                        or a
-                        group label, so it can count on an item ID or a marker ID being filled in. Anywhere reports
-                        those clicks as well, with empty IDs and the kind of thing that was hit in the "what" variable.
-                    </description>
+                    <description>Items and markers keeps the action from running when the user clicks empty space, the time axis or a group label, so it can count on an item ID or a marker ID being filled in. Anywhere reports those clicks as well, with empty IDs and the kind of thing that was hit in the "what" variable.</description>
                     <enumerationValues>
                         <enumerationValue key="item">Items and markers</enumerationValue>
                         <enumerationValue key="anywhere">Anywhere on the timeline</enumerationValue>
@@ -1052,12 +943,7 @@
                 </property>
                 <property key="doubleClickScope" type="enumeration" defaultValue="item">
                     <caption>On double click fires for</caption>
-                    <description>
-                        Items and markers keeps the action from running when the user double clicks empty space, the
-                        time axis
-                        or a group label, so it can count on an item ID or a marker ID being filled in. Anywhere reports
-                        those clicks as well, with empty IDs and the kind of thing that was hit in the "what" variable.
-                    </description>
+                    <description>Items and markers keeps the action from running when the user double clicks empty space, the time axis or a group label, so it can count on an item ID or a marker ID being filled in. Anywhere reports those clicks as well, with empty IDs and the kind of thing that was hit in the "what" variable.</description>
                     <enumerationValues>
                         <enumerationValue key="item">Items and markers</enumerationValue>
                         <enumerationValue key="anywhere">Anywhere on the timeline</enumerationValue>
@@ -1065,10 +951,7 @@
                 </property>
                 <property key="contextMenuAction" type="action" required="false">
                     <caption>On context menu</caption>
-                    <description>
-                        Triggered on right click. The browser context menu is suppressed wherever this action
-                        fires.
-                    </description>
+                    <description>Triggered on right click. The browser context menu is suppressed wherever this action fires.</description>
                     <actionVariables>
                         <actionVariable key="contextItemID" type="String" caption="Item ID" />
                         <actionVariable key="contextGroupID" type="String" caption="Group ID" />
@@ -1078,12 +961,7 @@
                 </property>
                 <property key="contextMenuScope" type="enumeration" defaultValue="item">
                     <caption>On context menu fires for</caption>
-                    <description>
-                        Items only keeps the action from running when the user right clicks empty space, the time axis
-                        or a
-                        group label, so it can count on an item ID being filled in. Anywhere reports those clicks as
-                        well, with an empty item ID and the kind of thing that was hit in the "what" variable.
-                    </description>
+                    <description>Items only keeps the action from running when the user right clicks empty space, the time axis or a group label, so it can count on an item ID being filled in. Anywhere reports those clicks as well, with an empty item ID and the kind of thing that was hit in the "what" variable.</description>
                     <enumerationValues>
                         <enumerationValue key="item">Items only</enumerationValue>
                         <enumerationValue key="anywhere">Anywhere on the timeline</enumerationValue>
@@ -1091,29 +969,21 @@
                 </property>
                 <property key="itemOverAction" type="action" required="false">
                     <caption>On item hover</caption>
-                    <description>
-                        Triggered when the mouse enters an item. Use a nanoflow: this runs often, and a run that starts
-                        while the previous one is still busy is skipped.
-                    </description>
+                    <description>Triggered when the mouse enters an item. Use a nanoflow: this runs often, and a run that starts while the previous one is still busy is skipped.</description>
                     <actionVariables>
                         <actionVariable key="hoveredItemID" type="String" caption="Hovered item ID" />
                     </actionVariables>
                 </property>
                 <property key="itemOutAction" type="action" required="false">
                     <caption>On item hover out</caption>
-                    <description>
-                        Triggered when the mouse leaves an item. Use a nanoflow: this runs often, and a run that starts
-                        while the previous one is still busy is skipped.
-                    </description>
+                    <description>Triggered when the mouse leaves an item. Use a nanoflow: this runs often, and a run that starts while the previous one is still busy is skipped.</description>
                     <actionVariables>
                         <actionVariable key="unhoveredItemID" type="String" caption="Unhovered item ID" />
                     </actionVariables>
                 </property>
                 <property key="dropAction" type="action" required="false">
                     <caption>On drop</caption>
-                    <description>
-                        Triggered when an external HTML5 drag and drop payload is dropped on the timeline.
-                    </description>
+                    <description>Triggered when an external HTML5 drag and drop payload is dropped on the timeline.</description>
                     <actionVariables>
                         <actionVariable key="droppedData" type="String" caption="Dropped data" />
                         <actionVariable key="droppedTime" type="DateTime" caption="Dropped time" />
@@ -1124,10 +994,7 @@
             <propertyGroup caption="Item">
                 <property key="itemClickAction" type="action" dataSource="VisItemsDataSource" required="false">
                     <caption>On item click</caption>
-                    <description>
-                        Triggered when an item is clicked. Receives the item object itself, so the microflow does not
-                        have to retrieve it from an id.
-                    </description>
+                    <description>Triggered when an item is clicked. Receives the item object itself, so the microflow does not have to retrieve it from an id.</description>
                 </property>
                 <property key="itemDoubleClickAction" type="action" dataSource="VisItemsDataSource" required="false">
                     <caption>On item double click</caption>
@@ -1135,24 +1002,15 @@
                 </property>
                 <property key="itemContextMenuAction" type="action" dataSource="VisItemsDataSource" required="false">
                     <caption>On item context menu</caption>
-                    <description>
-                        Triggered on right click on an item. Receives the item object. The browser context menu is
-                        suppressed wherever this action fires.
-                    </description>
+                    <description>Triggered on right click on an item. Receives the item object. The browser context menu is suppressed wherever this action fires.</description>
                 </property>
                 <property key="itemUpdateAction" type="action" dataSource="VisItemsDataSource" required="false">
                     <caption>On item update</caption>
-                    <description>
-                        Triggered when an editable item is double clicked, so it can be edited on a page. Receives the
-                        item object.
-                    </description>
+                    <description>Triggered when an editable item is double clicked, so it can be edited on a page. Receives the item object.</description>
                 </property>
                 <property key="itemMoveAction" type="action" dataSource="VisItemsDataSource" required="false">
                     <caption>On item moved</caption>
-                    <description>
-                        Triggered when an item has been dragged or resized. Receives the item object together with
-                        where it was dropped, so the new dates can be written straight onto it.
-                    </description>
+                    <description>Triggered when an item has been dragged or resized. Receives the item object together with where it was dropped, so the new dates can be written straight onto it.</description>
                     <actionVariables>
                         <actionVariable key="newStart" type="DateTime" caption="New start" />
                         <actionVariable key="newEnd" type="DateTime" caption="New end" />
@@ -1167,10 +1025,7 @@
             <propertyGroup caption="Timeline">
                 <property key="selectAction" type="action" required="false">
                     <caption>On select</caption>
-                    <description>
-                        Triggered when the selection changes by user interaction, including when it is cleared by
-                        clicking empty space.
-                    </description>
+                    <description>Triggered when the selection changes by user interaction, including when it is cleared by clicking empty space.</description>
                     <actionVariables>
                         <actionVariable key="selectedItemIDs" type="String" caption="Selected item IDs" />
                     </actionVariables>
@@ -1186,11 +1041,7 @@
                 </property>
                 <property key="visibleChangedAction" type="action" required="false">
                     <caption>On items in view changed</caption>
-                    <description>
-                        Triggered when the items or groups inside the visible window change, after moving, zooming,
-                        scrolling or a data change. Use a nanoflow: this runs often, and a run that starts while the
-                        previous one is still busy is skipped.
-                    </description>
+                    <description>Triggered when the items or groups inside the visible window change, after moving, zooming, scrolling or a data change. Use a nanoflow: this runs often, and a run that starts while the previous one is still busy is skipped.</description>
                     <actionVariables>
                         <actionVariable key="visibleItemIDs" type="String" caption="Item IDs in view" />
                         <actionVariable key="visibleGroupIDs" type="String" caption="Group IDs in view" />
@@ -1202,10 +1053,7 @@
                 </property>
                 <property key="markerChangeAction" type="action" required="false">
                     <caption>On marker moving</caption>
-                    <description>
-                        Triggered continuously while a marker is dragged. Use a nanoflow: this runs often, and a run
-                        that starts while the previous one is still busy is skipped.
-                    </description>
+                    <description>Triggered continuously while a marker is dragged. Use a nanoflow: this runs often, and a run that starts while the previous one is still busy is skipped.</description>
                     <actionVariables>
                         <actionVariable key="movingMarkerID" type="String" caption="Marker ID" />
                         <actionVariable key="movingMarkerTime" type="DateTime" caption="Marker time" />
@@ -1221,10 +1069,7 @@
                 </property>
                 <property key="markerLabelChangingAction" type="action" required="false">
                     <caption>On marker label changing</caption>
-                    <description>
-                        Triggered on every keystroke while an editable marker label is typed in. Use a nanoflow: this
-                        runs often, and a run that starts while the previous one is still busy is skipped.
-                    </description>
+                    <description>Triggered on every keystroke while an editable marker label is typed in. Use a nanoflow: this runs often, and a run that starts while the previous one is still busy is skipped.</description>
                     <actionVariables>
                         <actionVariable key="changingMarkerID" type="String" caption="Marker ID" />
                         <actionVariable key="changingMarkerLabel" type="String" caption="Marker label" />
@@ -1232,9 +1077,7 @@
                 </property>
                 <property key="markerLabelChangedAction" type="action" required="false">
                     <caption>On marker label changed</caption>
-                    <description>
-                        Triggered when the user leaves an editable marker label after changing it.
-                    </description>
+                    <description>Triggered when the user leaves an editable marker label after changing it.</description>
                     <actionVariables>
                         <actionVariable key="changedMarkerID" type="String" caption="Marker ID" />
                         <actionVariable key="changedMarkerLabel" type="String" caption="Marker label" />
@@ -1255,9 +1098,7 @@
                 </property>
                 <property key="onUpdateAction" type="action" required="false">
                     <caption>On update</caption>
-                    <description>
-                        Triggered when an editable item is double clicked, so it can be edited on a page.
-                    </description>
+                    <description>Triggered when an editable item is double clicked, so it can be edited on a page.</description>
                     <actionVariables>
                         <actionVariable key="data" type="String" caption="Updated item JSON" />
                         <actionVariable key="updatedItemID" type="String" caption="Item ID" />
@@ -1275,10 +1116,7 @@
                 </property>
                 <property key="movingAction" type="action" required="false">
                     <caption>On moving</caption>
-                    <description>
-                        Triggered continuously while an item is being dragged. Use a nanoflow: this runs often, and a
-                        run that starts while the previous one is still busy is skipped.
-                    </description>
+                    <description>Triggered continuously while an item is being dragged. Use a nanoflow: this runs often, and a run that starts while the previous one is still busy is skipped.</description>
                     <actionVariables>
                         <actionVariable key="movingItemID" type="String" caption="Item ID" />
                         <actionVariable key="movingStart" type="DateTime" caption="Start" />
@@ -1319,10 +1157,7 @@
                 </property>
                 <property key="groupOrderSwapAction" type="action" required="false">
                     <caption>On group order swap</caption>
-                    <description>
-                        Triggered when two groups swap places by dragging. Persist both order values to make the new
-                        order stick.
-                    </description>
+                    <description>Triggered when two groups swap places by dragging. Persist both order values to make the new order stick.</description>
                     <actionVariables>
                         <actionVariable key="swapGroupID" type="String" caption="Group ID" />
                         <actionVariable key="swapGroupOrderValue" type="Integer" caption="Group order value" />
@@ -1384,17 +1219,12 @@
             <propertyGroup caption="Escape hatches">
                 <property key="dataAttributes" type="expression" required="false">
                     <caption>Data attributes</caption>
-                    <description>
-                        Copy item fields onto the item element as data- attributes. Use 'all' or a comma separated list
-                        such as 'id,start,end'.
-                    </description>
+                    <description>Copy item fields onto the item element as data- attributes. Use 'all' or a comma separated list such as 'id,start,end'.</description>
                     <returnType type="String" />
                 </property>
                 <property key="xssDisabled" type="boolean" defaultValue="false">
                     <caption>Disable XSS protection</caption>
-                    <description>
-                        Render item and group content as raw HTML. Only enable this when the content is trusted.
-                    </description>
+                    <description>Render item and group content as raw HTML. Only enable this when the content is trusted.</description>
                 </property>
                 <property key="showLoadingOverlay" type="boolean" defaultValue="true">
                     <caption>Show loading overlay</caption>
@@ -1402,10 +1232,7 @@
                 </property>
                 <property key="optionsJson" type="expression" required="false">
                     <caption>Extra options (JSON)</caption>
-                    <description>
-                        JSON object merged into the vis-timeline options after all properties above, for any option that
-                        is not exposed as a property.
-                    </description>
+                    <description>JSON object merged into the vis-timeline options after all properties above, for any option that is not exposed as a property.</description>
                     <returnType type="String" />
                 </property>
             </propertyGroup>
