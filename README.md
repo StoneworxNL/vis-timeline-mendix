@@ -52,6 +52,8 @@ later.
 4. Configure the rest from the property tabs. Studio Pro hides the properties that do not apply to the choices you made
    and reports the combinations that cannot work. Every property is listed under [Properties](#properties).
 
+<img alt="The Items tab of the Vis Timeline properties in Studio Pro" src="images/studio-pro/tab-items.png" width="600"/>
+
 ### Identifiers
 
 All ids (items, groups, subgroups, markers) are normalised to strings, so an Integer group id and a String item group id
@@ -130,6 +132,8 @@ that appears. They are rendered per row with the row's object in context, so dat
 buttons all work. Plain HTML in an attribute works too, but only when **Disable XSS protection** is on - and only for
 content you fully control.
 
+![Structure mode: a button and an image in the item content drop zone, and an image in the visible frame drop zone](images/studio-pro/structure-mode-templates.png)
+
 ### Click events
 
 Clicking empty space, the time axis or a group label is still a click as far as vis-timeline is concerned. **On click
@@ -202,6 +206,8 @@ and, for actions, the variables they pass. Properties whose type is an expressio
 <details>
 <summary><b>Items</b> (24 properties)</summary>
 
+<img alt="The Items tab in Studio Pro" src="images/studio-pro/tab-items.png" width="600"/>
+
 #### Items → Data source
 
 | Property         | Type                                                   | Default | Description                                                                                                          |
@@ -255,6 +261,8 @@ and, for actions, the variables they pass. Properties whose type is an expressio
 
 <details>
 <summary><b>Groups</b> (20 properties)</summary>
+
+<img alt="The Groups tab in Studio Pro" src="images/studio-pro/tab-groups.png" width="600"/>
 
 #### Groups → Data source
 
@@ -329,6 +337,8 @@ and, for actions, the variables they pass. Properties whose type is an expressio
 <details>
 <summary><b>Appearance</b> (25 properties)</summary>
 
+<img alt="The Appearance tab in Studio Pro" src="images/studio-pro/tab-appearance.png" width="600"/>
+
 #### Appearance → Size
 
 | Property       | Type       | Default | Description                                                                          |
@@ -373,6 +383,8 @@ and, for actions, the variables they pass. Properties whose type is an expressio
 
 <details>
 <summary><b>Time axis</b> (19 properties)</summary>
+
+<img alt="The Time axis tab in Studio Pro" src="images/studio-pro/tab-time-axis.png" width="600"/>
 
 #### Time axis → Visible window
 
@@ -423,6 +435,8 @@ and, for actions, the variables they pass. Properties whose type is an expressio
 <details>
 <summary><b>Interaction</b> (24 properties)</summary>
 
+<img alt="The Interaction tab in Studio Pro" src="images/studio-pro/tab-interaction.png" width="600"/>
+
 #### Interaction → Selection
 
 | Property               | Type               | Default | Description                                                                                                                                                                                                                         |
@@ -467,6 +481,8 @@ and, for actions, the variables they pass. Properties whose type is an expressio
 <details>
 <summary><b>Editing</b> (15 properties)</summary>
 
+<img alt="The Editing tab in Studio Pro, here with editing switched off" src="images/studio-pro/tab-editing.png" width="600"/>
+
 #### Editing → Items
 
 | Property                         | Type       | Default | Description                                                                                     |
@@ -506,6 +522,8 @@ and, for actions, the variables they pass. Properties whose type is an expressio
 
 <details>
 <summary><b>Events</b> (33 properties)</summary>
+
+<img alt="The Events tab in Studio Pro" src="images/studio-pro/tab-events.png" width="600"/>
 
 #### Events → Mouse
 
@@ -570,6 +588,8 @@ and, for actions, the variables they pass. Properties whose type is an expressio
 <details>
 <summary><b>Advanced</b> (8 properties)</summary>
 
+<img alt="The Advanced tab in Studio Pro" src="images/studio-pro/tab-advanced.png" width="600"/>
+
 #### Advanced → Control
 
 | Property               | Type               | Default            | Description                                                                                                                                                                                                                                                                      |
@@ -589,6 +609,14 @@ and, for actions, the variables they pass. Properties whose type is an expressio
 | Extra options (JSON)   | Expression |         | JSON object merged into the vis-timeline options after all properties above, for any option that is not exposed as a property. |
 
 </details>
+
+## Studio Pro preview
+
+Studio Pro cannot run vis-timeline, so Design mode draws a static impression of the timeline: an axis and two groups
+with sample items, using the page's styling. When **Content type** or **Group content type** is _Custom_, the drop zones
+for the template widgets appear inside the items and group labels.
+
+![The design-mode preview in Studio Pro](images/studio-pro/design-mode-preview.png)
 
 ## Demo project
 
