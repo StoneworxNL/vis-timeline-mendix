@@ -1,7 +1,7 @@
 import { ReactElement, ReactNode, useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { createPortal } from "react-dom";
 import classNames from "classnames";
-import { ObjectItem } from "mendix";
+import { ActionValue, ListActionValue, ObjectItem } from "mendix";
 import {
     DataGroupCollectionType,
     DataItemCollectionType,
@@ -19,19 +19,20 @@ import { fitWithFallback, inScope, isSettled, syncWhenSettled } from "../utils/g
 import { createInViewReporter } from "../utils/inView";
 import { registerDragSources } from "../utils/dragSources";
 import {
+    ActionQueue,
     addActionArgs,
     awaitsConfirmation,
     fireAction,
-    fireItemAction,
     idToString,
+    itemActionSource,
     isAnyRunning,
     toBig,
     wantedSelection,
     writeSelection
 } from "../utils/actions";
 import { buildStaticOptions, optionsSignature, withClearedOptions } from "../utils/options";
-import { runCommand } from "../utils/commands";
-import { defaultSnap, resolveLocale, visMoment } from "../utils/vis";
+import { runCommand, stopRolling } from "../utils/commands";
+import { defaultSnap, resolveLocale, snapToMinutes, visMoment } from "../utils/vis";
 import { dynamicBoolean, dynamicText, sameIds, toDate, VisId } from "../utils/values";
 
 type TemplateKind = "item" | "frame" | "tooltip" | "group";
@@ -52,7 +53,23 @@ type PropsRef = { current: VisTimelineContainerProps };
 /** Looks up the Mendix object behind a vis item id, so an action can be handed the object itself. */
 type ItemResolver = (id: VisId | undefined) => ObjectItem | undefined;
 
-const MS_PER_MINUTE = 60000;
+type ActionKey = {
+    [K in keyof VisTimelineContainerProps]-?: VisTimelineContainerProps[K] extends ActionValue<any> | undefined
+        ? K
+        : never;
+}[keyof VisTimelineContainerProps];
+
+type ItemActionKey = {
+    [K in keyof VisTimelineContainerProps]-?: VisTimelineContainerProps[K] extends ListActionValue<any> | undefined
+        ? K
+        : never;
+}[keyof VisTimelineContainerProps];
+
+/** Runs one of the widget's actions through the queue, so a run is never lost to a busy one. */
+interface Actions {
+    run(key: ActionKey, args?: Record<string, unknown>, latestOnly?: boolean): void;
+    runForItem(key: ItemActionKey, id: VisId | undefined, args?: Record<string, unknown>): void;
+}
 
 /** How long to wait after an edit action finished for Mendix to send the changed data. */
 const LOCAL_EDIT_SETTLE_MS = 1000;
@@ -102,7 +119,9 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
     // meantime. Applying that would clear the timeline and flash it back a moment later, so
     // whatever is on screen is kept until real data arrives.
     const itemsSettled = isSettled(props.VisItemsDataSource);
-    const groupsSettled = isSettled(props.VisGroupsDataSource);
+    // Subgroup visibility is folded into the groups, so while its data source refreshes the groups
+    // are not settled either; applying them would show every hidden subgroup for a moment.
+    const groupsSettled = isSettled(props.VisGroupsDataSource) && isSettled(props.subgroupsDataSource);
     const markersSettled = isSettled(props.markersDataSource);
 
     if (itemsSettled) {
@@ -112,8 +131,12 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         objectsRef.current.groups = groupObjects;
     }
 
+    // The items on screen: while the data source refreshes, that is still the last list Mendix sent,
+    // so a fit or a focus command arriving in the meantime has something to work with.
     const itemsRef = useRef(items);
-    itemsRef.current = items;
+    if (itemsSettled) {
+        itemsRef.current = items;
+    }
 
     const staticOptions = buildStaticOptions(props);
     const staticOptionsRef = useRef(staticOptions);
@@ -168,6 +191,31 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         return id === undefined ? undefined : objectsRef.current.items.get(id);
     }, []);
 
+    const actionQueue = useMemo(() => new ActionQueue(), []);
+    const actions = useMemo<Actions>(
+        () => ({
+            run: (key, args, latestOnly) =>
+                actionQueue.run(key, () => propsRef.current[key] as ActionValue<any> | undefined, args, latestOnly),
+            runForItem: (key, id, args) => {
+                if (id !== undefined && propsRef.current[key]) {
+                    actionQueue.run(
+                        `${key}:${id}`,
+                        itemActionSource(
+                            () => propsRef.current[key] as ListActionValue<any> | undefined,
+                            () => resolveItem(id)
+                        ),
+                        args
+                    );
+                }
+            }
+        }),
+        [actionQueue, resolveItem]
+    );
+    // Mendix reports that a run finished by rendering the widget again, which is when the next
+    // queued run can start.
+    useEffect(() => actionQueue.flush());
+    useEffect(() => () => actionQueue.dispose(), [actionQueue]);
+
     const animation = useCallback(
         (): TimelineAnimationOptions =>
             propsRef.current.animateChanges
@@ -197,10 +245,12 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
     }, []);
 
     // Used instead of vis-timeline's focus(), which throws for box and point items (see focusWindow).
+    // Like focus(), it leaves rolling mode first, or the next rolling step would scroll away again.
     const focusItems = useCallback((ids: VisId[], animationOptions: TimelineAnimationOptions) => {
         const timeline = timelineRef.current;
         const target = timeline && focusWindow(itemsRef.current, ids, timeline.getWindow());
         if (timeline && target) {
+            stopRolling(timeline);
             timeline.setWindow(target.start, target.end, animationOptions);
         }
     }, []);
@@ -212,8 +262,8 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
     }, []);
 
     const functionOptions = useMemo(
-        () => buildFunctionOptions(propsRef, templateContainer, resolveItem, markLocalEdit),
-        [templateContainer, resolveItem, markLocalEdit]
+        () => buildFunctionOptions(propsRef, templateContainer, actions, markLocalEdit),
+        [templateContainer, actions, markLocalEdit]
     );
 
     // The timeline is created once. Options, data, markers, window and selection are pushed in by
@@ -236,7 +286,7 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
             return;
         }
         timelineRef.current = timeline;
-        const disposeEvents = registerEvents(timeline, propsRef, appliedSelectionRef, resolveItem);
+        const disposeEvents = registerEvents(timeline, propsRef, appliedSelectionRef, resolveItem, actions);
         container.addEventListener("pointerup", placeCaretInMarkerLabel, true);
 
         // Custom time bars live on the timeline instance rather than in a data set, so they have to
@@ -254,7 +304,7 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
             disposeEvents();
             timeline.destroy();
         };
-    }, [functionOptions, resolveItem]);
+    }, [functionOptions, resolveItem, actions]);
 
     useEffect(() => {
         const isFirstRun = appliedOptionsRef.current === undefined;
@@ -281,7 +331,7 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
             return;
         }
         const removed = syncWhenSettled(
-            propsRef.current.VisGroupsDataSource,
+            { status: groupsSettled ? "available" : "loading" },
             groupsDataSetRef.current,
             groups,
             groupSignaturesRef.current
@@ -310,17 +360,20 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
     const windowEnd = props.windowEnd?.value;
     const fitOnDataChange = props.fitOnDataChange;
 
-    const editActionRunning = isAnyRunning(
-        [props.moveAction, props.onRemoveAction, props.onAddAction],
-        [props.itemMoveAction, props.itemRemoveAction],
-        Array.from(localEditsRef.current, id => resolveItem(id)).filter(isObjectItem)
-    );
+    const editActionRunning =
+        actionQueue.hasPending() ||
+        isAnyRunning(
+            [props.moveAction, props.onRemoveAction, props.onAddAction],
+            [props.itemMoveAction, props.itemRemoveAction],
+            Array.from(localEditsRef.current, id => resolveItem(id)).filter(isObjectItem)
+        );
     const editActionRunningRef = useRef(editActionRunning);
     editActionRunningRef.current = editActionRunning;
 
     const syncItems = useCallback((): VisId[] | undefined => {
         // Once the edit actions are done, whatever Mendix has wins over what the user dropped.
-        if (!editActionRunningRef.current && forgetLocalEdits(localEditsRef.current, itemSignaturesRef.current)) {
+        const running = editActionRunningRef.current || actionQueue.hasPending();
+        if (!running && forgetLocalEdits(localEditsRef.current, itemSignaturesRef.current)) {
             clearTimeout(localEditTimerRef.current);
         }
         return syncWhenSettled(
@@ -329,7 +382,7 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
             itemsRef.current,
             itemSignaturesRef.current
         );
-    }, []);
+    }, [actionQueue]);
 
     useEffect(() => {
         const timeline = timelineRef.current;
@@ -352,13 +405,33 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         }
         // The very first fit lands the window on the data; animating that from wherever the
         // timeline happened to open just makes the page look like it is still loading.
-        const fitAnimation: TimelineAnimationOptions = hasFittedRef.current ? animation() : { animation: false };
+        const isFirstFit = !hasFittedRef.current;
+        const fitAnimation: TimelineAnimationOptions = isFirstFit ? { animation: false } : animation();
         hasFittedRef.current = true;
         // fit() derives the window from the rendered width of the items, so it has to wait until
         // the timeline has been laid out. Fitting straight after a data change - which is what the
         // previous version did - produces a window that is orders of magnitude too wide.
         cancelAnimationFrame(pendingFitRef.current);
-        pendingFitRef.current = requestAnimationFrame(() => fitToItems(fitAnimation));
+        pendingFitRef.current = requestAnimationFrame(() => {
+            fitToItems(fitAnimation);
+            // The window and selection effects already ran in this commit, so the fit would
+            // otherwise throw away a Window start or end set on its own, or the focus on a selection
+            // the page opened with.
+            const current = timelineRef.current;
+            const { windowStart: start, windowEnd: end, focusOnSelection } = propsRef.current;
+            if (!current) {
+                return;
+            }
+            if (start?.value !== undefined || end?.value !== undefined) {
+                current.setWindow(
+                    (start?.value ?? null) as unknown as Date,
+                    (end?.value ?? null) as unknown as Date,
+                    fitAnimation
+                );
+            } else if (isFirstFit && focusOnSelection && appliedSelectionRef.current.length > 0) {
+                focusItems(appliedSelectionRef.current, fitAnimation);
+            }
+        });
     }, [
         items,
         itemsSettled,
@@ -366,6 +439,7 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         dropContainers,
         animation,
         fitToItems,
+        focusItems,
         fitOnDataChange,
         windowStart,
         windowEnd
@@ -496,7 +570,9 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
 
     return (
         <div
-            className={classNames("vis-timeline-widget", props.class, { "vis-timeline-widget--loading": loading })}
+            className={classNames("vis-timeline-widget", props.class, {
+                "vis-timeline-widget--loading": loading && props.showLoadingOverlay
+            })}
             style={props.style}
             tabIndex={props.tabIndex}
         >
@@ -618,17 +694,19 @@ function mergeOptions(staticOptions: TimelineOptions, functionOptions: TimelineO
 function buildFunctionOptions(
     propsRef: PropsRef,
     templateContainer: (kind: TemplateKind, objectId: VisId) => HTMLElement,
-    resolveItem: ItemResolver,
+    actions: Actions,
     markLocalEdit: (id: unknown) => void
 ): TimelineOptions {
     const options: TimelineOptions = {
         template: (item?: any) =>
             propsRef.current.itemContentType === "custom" && item?.id != null
                 ? templateContainer("item", String(item.id))
-                : item?.content ?? "",
+                : rawOrText(propsRef, item?.content ?? ""),
         groupTemplate: (group?: any) =>
             propsRef.current.groupContentType === "custom" && group?.id != null
                 ? templateContainer("group", String(group.id))
+                : typeof group?.content === "string"
+                ? rawOrText(propsRef, group.content)
                 : group?.content,
         visibleFrameTemplate: (item?: any) =>
             propsRef.current.itemVisibleFrameWidgets && item?.id != null
@@ -638,23 +716,22 @@ function buildFunctionOptions(
             template: (item: any) =>
                 propsRef.current.itemTooltipType === "custom" && item?.id != null
                     ? (templateContainer("tooltip", String(item.id)) as unknown as string)
-                    : item?.title ?? ""
+                    : (rawOrText(propsRef, item?.title ?? "") as string)
         },
         snap: (date: Date, scale: string, step: number) => {
-            const { IsSnap, snapMinutes } = propsRef.current;
+            const { IsSnap, snapMinutes, timeZoneOffset } = propsRef.current;
             if (!dynamicBoolean(IsSnap, true)) {
                 return date;
             }
             if (snapMinutes > 0) {
-                const interval = snapMinutes * MS_PER_MINUTE;
-                return new Date(Math.round(date.valueOf() / interval) * interval);
+                return snapToMinutes(date, snapMinutes, timeZoneOffset?.value || undefined);
             }
             return defaultSnap ? defaultSnap(date, scale, step) : date;
         },
-        onInitialDrawComplete: () => fireAction(propsRef.current.onInitialDrawCompleteAction),
+        onInitialDrawComplete: () => actions.run("onInitialDrawCompleteAction"),
         onAdd: (item: any, callback: (item: any) => void) => {
             const props = propsRef.current;
-            fireAction(props.onAddAction, addActionArgs(item));
+            actions.run("onAddAction", addActionArgs(item));
             if (awaitsConfirmation(props, "add")) {
                 markLocalEdit(item?.id);
             }
@@ -664,22 +741,22 @@ function buildFunctionOptions(
         // synchronously, so the inline edit is always cancelled and the data source brings the new
         // values back in once the action has run.
         onUpdate: (item: any, callback: (item: any) => void) => {
-            fireAction(propsRef.current.onUpdateAction, {
+            actions.run("onUpdateAction", {
                 data: JSON.stringify(item),
                 updatedItemID: idToString(item?.id)
             });
-            fireItemAction(propsRef.current.itemUpdateAction, resolveItem(idToString(item?.id)));
+            actions.runForItem("itemUpdateAction", idToString(item?.id));
             callback(null);
         },
         onMove: (item: any, callback: (item: any) => void) => {
             const props = propsRef.current;
-            fireAction(props.moveAction, {
+            actions.run("moveAction", {
                 movedItemID: idToString(item?.id),
                 movedStart: toDate(item?.start),
                 movedEnd: toDate(item?.end),
                 movedGroupID: idToString(item?.group)
             });
-            fireItemAction(props.itemMoveAction, resolveItem(idToString(item?.id)), {
+            actions.runForItem("itemMoveAction", idToString(item?.id), {
                 newStart: toDate(item?.start),
                 newEnd: toDate(item?.end),
                 newGroupID: idToString(item?.group)
@@ -700,28 +777,19 @@ function buildFunctionOptions(
         },
         onRemove: (item: any, callback: (item: any) => void) => {
             const props = propsRef.current;
-            fireAction(props.onRemoveAction, {
+            actions.run("onRemoveAction", {
                 data: JSON.stringify(item),
                 removedItemID: idToString(item?.id)
             });
-            fireItemAction(props.itemRemoveAction, resolveItem(idToString(item?.id)));
+            actions.runForItem("itemRemoveAction", idToString(item?.id));
             if (awaitsConfirmation(props, "remove")) {
                 markLocalEdit(item?.id);
             }
             callback(props.removeMode === "removeAndCallAction" ? item : null);
         },
-        onAddGroup: (group: any, callback: (group: any) => void) => {
-            fireAction(propsRef.current.addGroupAction, { addedGroupJSON: JSON.stringify(group) });
-            callback(group);
-        },
         onMoveGroup: (group: any, callback: (group: any) => void) => {
-            fireAction(propsRef.current.moveGroupAction, { movedGroupID: idToString(group?.id) });
+            actions.run("moveGroupAction", { movedGroupID: idToString(group?.id) });
             callback(group);
-        },
-        onRemoveGroup: (group: any, callback: (group: any) => void) => {
-            const props = propsRef.current;
-            fireAction(props.removeGroupAction, { removedGroupID: idToString(group?.id) });
-            callback(props.removeMode === "removeAndCallAction" ? group : null);
         },
         // Dragging a group to another position only sticks when the values the groups are ordered
         // by are swapped as well. vis-timeline writes the two group objects it passes in back to
@@ -732,7 +800,7 @@ function buildFunctionOptions(
             const toValue = toGroup?.value;
             fromGroup.value = toValue;
             toGroup.value = fromValue;
-            fireAction(propsRef.current.groupOrderSwapAction, {
+            actions.run("groupOrderSwapAction", {
                 swapGroupID: idToString(fromGroup?.id),
                 swapGroupOrderValue: toBig(toValue),
                 swapOtherGroupID: idToString(toGroup?.id),
@@ -768,7 +836,8 @@ function registerEvents(
     timeline: Timeline,
     propsRef: PropsRef,
     appliedSelectionRef: { current: VisId[] },
-    resolveItem: ItemResolver
+    resolveItem: ItemResolver,
+    actions: Actions
 ): () => void {
     // Editable items emit a second, reduced `click` and `doubleClick` payload that has no `what`
     // key. Ignoring those is what keeps a microflow from running twice on a single click.
@@ -780,7 +849,7 @@ function registerEvents(
             return;
         }
         if (inScope(props.clickScope, properties, true)) {
-            fireAction(props.clickAction, {
+            actions.run("clickAction", {
                 clickedItemID: idToString(properties.item),
                 clickedGroupID: idToString(properties.group),
                 clickedTime: toDate(properties.time),
@@ -788,7 +857,7 @@ function registerEvents(
                 clickedMarkerID: idToString(properties.customTime)
             });
         }
-        fireItemAction(props.itemClickAction, resolveItem(idToString(properties.item)));
+        actions.runForItem("itemClickAction", idToString(properties.item));
     });
 
     timeline.on("doubleClick", properties => {
@@ -797,7 +866,7 @@ function registerEvents(
             return;
         }
         if (inScope(props.doubleClickScope, properties, true)) {
-            fireAction(props.doubleClickAction, {
+            actions.run("doubleClickAction", {
                 doubleClickedItemID: idToString(properties.item),
                 doubleClickedGroupID: idToString(properties.group),
                 doubleClickedTime: toDate(properties.time),
@@ -805,7 +874,7 @@ function registerEvents(
                 doubleClickedMarkerID: idToString(properties.customTime)
             });
         }
-        fireItemAction(props.itemDoubleClickAction, resolveItem(idToString(properties.item)));
+        actions.runForItem("itemDoubleClickAction", idToString(properties.item));
     });
 
     timeline.on("contextmenu", properties => {
@@ -819,14 +888,14 @@ function registerEvents(
         // Only take the browser menu away where the widget actually answers the right click.
         properties?.event?.preventDefault?.();
         if (widgetLevel) {
-            fireAction(props.contextMenuAction, {
+            actions.run("contextMenuAction", {
                 contextItemID: idToString(properties.item),
                 contextGroupID: idToString(properties.group),
                 contextTime: toDate(properties.time),
                 contextWhat: properties.what ?? undefined
             });
         }
-        fireItemAction(props.itemContextMenuAction, object);
+        actions.runForItem("itemContextMenuAction", idToString(properties.item));
     });
 
     timeline.on("itemover", properties =>
@@ -836,7 +905,7 @@ function registerEvents(
         fireAction(propsRef.current.itemOutAction, { unhoveredItemID: idToString(properties?.item) })
     );
     timeline.on("groupDragged", properties =>
-        fireAction(propsRef.current.groupDraggedAction, { draggedGroupID: idToString(properties?.groupId) })
+        actions.run("groupDraggedAction", { draggedGroupID: idToString(properties?.groupId) })
     );
 
     timeline.on("drop", properties => {
@@ -846,7 +915,7 @@ function registerEvents(
         } catch {
             data = undefined;
         }
-        fireAction(propsRef.current.dropAction, {
+        actions.run("dropAction", {
             droppedData: data,
             droppedTime: toDate(properties?.time),
             droppedGroupID: idToString(properties?.group)
@@ -864,15 +933,19 @@ function registerEvents(
             attribute.setValue(joined);
         }
         writeSelection(props.itemSelection, ids.map(resolveItem).filter(isObjectItem));
-        fireAction(props.selectAction, { selectedItemIDs: joined });
+        actions.run("selectAction", { selectedItemIDs: joined }, true);
     });
 
     timeline.on("rangechanged", properties =>
-        fireAction(propsRef.current.rangeChangedAction, {
-            rangeStart: toDate(properties?.start),
-            rangeEnd: toDate(properties?.end),
-            rangeByUser: properties?.byUser === true
-        })
+        actions.run(
+            "rangeChangedAction",
+            {
+                rangeStart: toDate(properties?.start),
+                rangeEnd: toDate(properties?.end),
+                rangeByUser: properties?.byUser === true
+            },
+            true
+        )
     );
 
     const inView = createInViewReporter(
@@ -900,20 +973,35 @@ function registerEvents(
         })
     );
     timeline.on("markerchanged", properties =>
-        fireAction(propsRef.current.markerLabelChangedAction, {
+        actions.run("markerLabelChangedAction", {
             changedMarkerID: idToString(properties?.id),
             changedMarkerLabel: htmlToText(properties?.title)
         })
     );
 
     timeline.on("timechanged", properties =>
-        fireAction(propsRef.current.markerChangedAction, {
+        actions.run("markerChangedAction", {
             movedMarkerID: idToString(properties?.id),
             movedMarkerTime: toDate(properties?.time)
         })
     );
 
     return () => inView.dispose();
+}
+
+/**
+ * With Disable XSS protection on, content is handed to vis-timeline as an element, which it shows
+ * as it is. Turning off vis-timeline's own sanitizer instead would turn it off for every timeline
+ * on the page, because vis-timeline keeps one for all of them.
+ */
+function rawOrText(propsRef: PropsRef, content: string): string | HTMLElement {
+    if (!propsRef.current.xssDisabled || typeof content !== "string" || content === "") {
+        return content;
+    }
+    const element = document.createElement("span");
+    element.className = "vis-timeline-widget-html";
+    element.innerHTML = content;
+    return element;
 }
 
 function htmlToText(html: unknown): string {

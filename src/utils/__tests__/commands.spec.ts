@@ -53,13 +53,13 @@ describe("runCommand", () => {
         expect(timeline.zoomOut).toHaveBeenCalledWith(0.2, animation);
     });
 
-    it("moves the window by a share of its own width", () => {
+    it("moves the window by a share of its own width, right to later dates", () => {
         const timeline = fakeTimeline();
         const tenDays = 10 * 24 * 60 * 60 * 1000;
         runCommand(timeline, "moveRight", animation, jest.fn());
         const [start, end] = (timeline.setWindow as jest.Mock).mock.calls[0];
-        expect(start).toBe(new Date("2024-05-01T00:00:00Z").getTime() - tenDays * 0.2);
-        expect(end).toBe(new Date("2024-05-11T00:00:00Z").getTime() - tenDays * 0.2);
+        expect(start).toBe(new Date("2024-05-01T00:00:00Z").getTime() + tenDays * 0.2);
+        expect(end).toBe(new Date("2024-05-11T00:00:00Z").getTime() + tenDays * 0.2);
     });
 
     it("focuses one or several items", () => {
@@ -115,8 +115,9 @@ describe("runCommand", () => {
         const tenDays = 10 * 24 * 60 * 60 * 1000;
         expect(timeline.redraw).toHaveBeenCalled();
         expect(timeline.toggleRollingMode).toHaveBeenCalled();
+        // moveLeft shows earlier dates, as in vis-timeline's navigation menu example.
         expect((timeline.setWindow as jest.Mock).mock.calls[0][0]).toBe(
-            new Date("2024-05-01T00:00:00Z").getTime() + tenDays * 0.5
+            new Date("2024-05-01T00:00:00Z").getTime() - tenDays * 0.5
         );
         expect(timeline.moveTo).toHaveBeenCalledWith(new Date("2024-07-01T00:00:00Z"), animation);
     });

@@ -104,7 +104,9 @@ export function syncMarkers(timeline: Timeline, next: VisMarker[], applied: Map<
             timeline.setCustomTime(marker.time, marker.id);
         }
         if (!current || current.title !== marker.title) {
-            timeline.setCustomTimeTitle(marker.title ?? "", marker.id);
+            // Without a title vis-timeline shows its own "time: ..." tooltip (Label for time); an
+            // empty string would hide that.
+            timeline.setCustomTimeTitle(marker.title as string, marker.id);
         }
         const labelChanged = current
             ? current.label !== marker.label || !!current.labelEditable !== !!marker.labelEditable

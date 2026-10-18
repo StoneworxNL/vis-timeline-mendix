@@ -3,25 +3,112 @@ import { ActionValue, ListActionValue, ObjectItem } from "mendix";
 import { VisTimelineContainerProps } from "../../typings/VisTimelineProps";
 import { splitIds, toDate, VisId } from "./values";
 
-/** Runs a Mendix action, unless the platform says it cannot run or is already running. */
+/**
+ * Runs a Mendix action, unless the platform says it cannot run or is already running. Only for the
+ * events that fire many times a second (hover, moving, marker dragging, typing), where skipping a
+ * run is what the property descriptions promise; edits go through an ActionQueue.
+ */
 export function fireAction(action: ActionValue<any> | undefined, args?: Record<string, unknown>): void {
     if (!action || !action.canExecute || action.isExecuting) {
         return;
     }
+    execute(action, args);
+}
+
+function execute(action: ActionValue<any>, args?: Record<string, unknown>): void {
     (action.execute as (a?: Record<string, unknown>) => void)(args);
 }
 
+/** Reads the action as it is now: Mendix hands out a new ActionValue whenever its state changes. */
+export type ActionSource = () => ActionValue<any> | undefined;
+
+interface PendingAction {
+    key: string;
+    source: ActionSource;
+    args?: Record<string, unknown>;
+}
+
 /**
- * Runs an action bound to the items data source, for the row the item came from. This is what lets
- * a microflow work with the object itself instead of retrieving it from an id.
+ * How long an action that was started is taken to be running when Mendix never reports it as
+ * running, which it does not have to for an action that finishes at once.
  */
-export function fireItemAction(
-    action: ListActionValue<any> | undefined,
-    object: ObjectItem | undefined,
-    args?: Record<string, unknown>
-): void {
-    if (action && object) {
-        fireAction(action.get(object), args);
+const START_GRACE_MS = 1000;
+
+/**
+ * Runs edit actions one after the other instead of dropping the ones that arrive while the previous
+ * run is still busy. Dragging a group past three rows swaps the order three times, and two quick
+ * drops each need their On move; skipping any of those leaves Mendix with data that no longer
+ * matches the screen.
+ *
+ * Mendix only says an action is running on the ActionValue of a later render, so the action object
+ * a run was started from counts as busy too: without that, three calls in the same event would all
+ * start at once. Call `flush` after every render, so a queued run starts as soon as Mendix reports
+ * the previous one finished.
+ */
+export class ActionQueue {
+    private pending: PendingAction[] = [];
+    private readonly started = new Map<string, { action: ActionValue<any>; at: number }>();
+    private timer: ReturnType<typeof setTimeout> | undefined;
+
+    constructor(private readonly now: () => number = Date.now) {}
+
+    /**
+     * Queues a run of the action `key` names. With `latestOnly`, a run still waiting for the same
+     * key is replaced, for events where only the newest value matters (the selection, the range).
+     */
+    run(key: string, source: ActionSource, args?: Record<string, unknown>, latestOnly = false): void {
+        if (!source()) {
+            return;
+        }
+        if (latestOnly) {
+            this.pending = this.pending.filter(entry => entry.key !== key);
+        }
+        this.pending.push({ key, source, args });
+        this.flush();
+    }
+
+    flush(): void {
+        clearTimeout(this.timer);
+        this.timer = undefined;
+        const busy = new Set<string>();
+        this.pending = this.pending.filter(entry => {
+            if (busy.has(entry.key)) {
+                return true;
+            }
+            const action = entry.source();
+            if (!action) {
+                // The action was unbound in the meantime, so there is nothing left to run.
+                return false;
+            }
+            const started = this.started.get(entry.key);
+            const sameRun = started?.action === action && this.now() - started.at < START_GRACE_MS;
+            if (action.isExecuting || sameRun) {
+                busy.add(entry.key);
+                return true;
+            }
+            if (!action.canExecute) {
+                return false;
+            }
+            this.started.set(entry.key, { action, at: this.now() });
+            execute(action, entry.args);
+            busy.add(entry.key);
+            return false;
+        });
+        if (this.pending.length > 0) {
+            // The render in which Mendix reports the previous run finished calls flush; this covers
+            // an action that finished without Mendix ever reporting it as running.
+            this.timer = setTimeout(() => this.flush(), START_GRACE_MS);
+        }
+    }
+
+    /** Whether a run is still waiting to start, which counts as the edit still being made. */
+    hasPending(): boolean {
+        return this.pending.length > 0;
+    }
+
+    dispose(): void {
+        clearTimeout(this.timer);
+        this.pending = [];
     }
 }
 
@@ -148,4 +235,19 @@ export function toBig(value: unknown): Big | undefined {
     } catch {
         return undefined;
     }
+}
+
+/**
+ * The source for an action bound to the items data source, for one row. The row is looked up when
+ * the run starts, so a queued run uses the object as Mendix has it then.
+ */
+export function itemActionSource(
+    list: () => ListActionValue<any> | undefined,
+    object: () => ObjectItem | undefined
+): ActionSource {
+    return () => {
+        const action = list();
+        const row = object();
+        return action && row ? action.get(row) : undefined;
+    };
 }

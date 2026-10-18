@@ -3,6 +3,7 @@ import {
     attribute,
     containerProps,
     dateAttribute,
+    dynamic,
     listValue,
     numberAttribute,
     referenceSet,
@@ -131,11 +132,23 @@ describe("buildItems", () => {
             expect(items[0].editable).toEqual({ updateTime: true, updateGroup: false, remove: false });
         });
 
-        it("leaves a fine grained flag undefined when nothing else is mapped", () => {
+        it("fills a fine grained flag that is not mapped from the timeline settings", () => {
             const { items } = buildItems(
                 itemProps({ VisItemsDataSource: listValue(rows), itemEditableUpdateTime: attribute("drag") })
             );
-            expect(items[0].editable).toEqual({ updateTime: true, updateGroup: undefined, remove: undefined });
+            expect(items[0].editable).toEqual({ updateTime: true, updateGroup: false, remove: false });
+
+            const allowed = buildItems(
+                itemProps({
+                    VisItemsDataSource: listValue(rows),
+                    itemEditableUpdateTime: attribute("drag"),
+                    editableRemove: dynamic(true),
+                    editableUpdateGroup: dynamic(true)
+                })
+            );
+            // vis-timeline replaces the timeline's flags with the item's object, so an undefined
+            // flag would have switched removing and moving between groups off for this item.
+            expect(allowed.items[0].editable).toBe(true);
         });
 
         it("hands over true when every flag allows editing, so the drag tooltip can show", () => {

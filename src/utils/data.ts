@@ -1,6 +1,6 @@
 import { ObjectItem } from "mendix";
 import { VisTimelineContainerProps } from "../../typings/VisTimelineProps";
-import { readAttribute, readId, readNumber, readTemplate, VisId } from "./values";
+import { dynamicBoolean, readAttribute, readId, readNumber, readTemplate, VisId } from "./values";
 
 /**
  * Every field is always present on the objects below, even when it is undefined. vis-timeline
@@ -115,11 +115,13 @@ function buildItemEditable(props: VisTimelineContainerProps, object: ObjectItem)
     if (updateTime === undefined && updateGroup === undefined && remove === undefined) {
         return editable;
     }
-    // The specific flags win; the general Editable flag fills in the ones that are not mapped.
+    // The specific flags win; the general Editable flag fills in the ones that are not mapped, and
+    // the timeline settings the rest. vis-timeline replaces the timeline's flags with an item's
+    // object as a whole, so a flag left undefined would switch that edit off for the item.
     const resolved = {
-        updateTime: updateTime ?? editable,
-        updateGroup: updateGroup ?? editable,
-        remove: remove ?? editable
+        updateTime: updateTime ?? editable ?? dynamicBoolean(props.editableUpdateTime),
+        updateGroup: updateGroup ?? editable ?? dynamicBoolean(props.editableUpdateGroup),
+        remove: remove ?? editable ?? dynamicBoolean(props.editableRemove)
     };
     // vis-timeline only shows the drag tooltip (tooltipOnItemUpdateTime) for an item whose editable
     // field is literally `true`, so an object that grants everything is handed over as a boolean.

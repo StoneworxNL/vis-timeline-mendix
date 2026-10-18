@@ -129,8 +129,6 @@ export function containerProps(overrides: Partial<VisTimelineContainerProps> = {
         editableOverrideItems: false,
         itemsAlwaysDraggableItem: false,
         itemsAlwaysDraggableRange: false,
-        groupEditableAdd: dynamic(false),
-        groupEditableRemove: dynamic(false),
         groupEditableOrder: dynamic(false),
         IsSnap: dynamic(true),
         snapMinutes: 0,

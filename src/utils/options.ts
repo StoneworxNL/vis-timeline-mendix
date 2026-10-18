@@ -2,7 +2,7 @@ import { TimelineOptions } from "vis-timeline/standalone";
 import { VisTimelineContainerProps } from "../../typings/VisTimelineProps";
 import { buildHiddenDates } from "./data";
 import { deepMerge, dynamicBoolean, dynamicNumber, dynamicText, parseJsonObject } from "./values";
-import { defaultLabelFormats, LabelFormats, resolveLocale, VisMoment } from "./vis";
+import { builtInLocale, defaultLabelFormats, LabelFormats, resolveLocale, VisMoment } from "./vis";
 
 /**
  * Everything vis-timeline can be told through plain data. Function valued options (templates,
@@ -21,11 +21,8 @@ export function buildStaticOptions(props: VisTimelineContainerProps): TimelineOp
             updateGroup: dynamicBoolean(props.editableUpdateGroup),
             overrideItems: props.editableOverrideItems
         },
-        groupEditable: {
-            add: dynamicBoolean(props.groupEditableAdd),
-            remove: dynamicBoolean(props.groupEditableRemove),
-            order: dynamicBoolean(props.groupEditableOrder)
-        },
+        // vis-timeline 8 never calls back for adding or removing a group, so only order is offered.
+        groupEditable: { order: dynamicBoolean(props.groupEditableOrder) },
         groupHeightMode: props.groupHeightMode,
         horizontalScroll: props.horizontalScroll,
         horizontalScrollInvert: props.horizontalScrollInvert,
@@ -67,7 +64,11 @@ export function buildStaticOptions(props: VisTimelineContainerProps): TimelineOp
         zoomable: props.zoomable,
         zoomFriction: props.zoomFriction,
         zoomKey: props.zoomKey === "none" ? "" : props.zoomKey,
-        xss: { disabled: props.xssDisabled }
+        // vis-timeline keeps one sanitizer for every timeline on the page and only sets it up when a
+        // timeline is created, so `disabled: true` here would switch it off for all the others too,
+        // and nothing would switch it back on. It is always (re)set to the default filter instead;
+        // Disable XSS protection is handled by the templates of this timeline alone.
+        xss: { disabled: false, filterOptions: {} }
     };
 
     if (props.defaultItemType !== "auto") {
@@ -110,7 +111,22 @@ export function buildStaticOptions(props: VisTimelineContainerProps): TimelineOp
     const currentLabel = dynamicText(props.localeCurrentLabel);
     const timeLabel = dynamicText(props.localeTimeLabel);
     options.locale = locale;
-    if (currentLabel !== undefined || timeLabel !== undefined) {
+    // setOptions replaces `locales` as a whole, so the entry has to carry all of vis-timeline's
+    // wording for the locale, not just the labels set here. English stays in, because vis-timeline
+    // falls back on it for a locale it has no entry for.
+    const builtIn = builtInLocale(locale);
+    const english = builtInLocale("en");
+    if (builtIn && english) {
+        options.locales = {
+            en: english,
+            [locale]: {
+                ...english,
+                ...builtIn,
+                ...(currentLabel !== undefined && { current: currentLabel }),
+                ...(timeLabel !== undefined && { time: timeLabel })
+            }
+        } as TimelineOptions["locales"];
+    } else if (currentLabel !== undefined || timeLabel !== undefined) {
         options.locales = {
             [locale]: {
                 ...(currentLabel !== undefined && { current: currentLabel }),
@@ -126,7 +142,7 @@ export function buildStaticOptions(props: VisTimelineContainerProps): TimelineOp
         // default formats and deep merges objects into them, which rewrites the defaults shared by
         // every timeline on the page; a function is assigned instead, so each timeline keeps its own.
         options.format = {
-            minorLabels: labelFormatter({ ...defaultLabelFormats.minorLabels, ...(minorLabels as LabelFormats) }),
+            minorLabels: labelFormatter({ ...defaultLabelFormats.minorLabels, ...(minorLabels as LabelFormats) }, true),
             majorLabels: labelFormatter({ ...defaultLabelFormats.majorLabels, ...(majorLabels as LabelFormats) })
         } as unknown as TimelineOptions["format"];
     } else if (minorLabels || majorLabels) {
@@ -191,7 +207,8 @@ const CLEARED_OPTIONS: Array<[string, unknown, (props: VisTimelineContainerProps
         ["max", null, props => props.maxDate],
         ["zoomMin", 10, props => props.zoomMin],
         ["zoomMax", 1000 * 60 * 60 * 24 * 365 * 10000, props => props.zoomMax],
-        ["hiddenDates", [], props => props.hiddenDatesDataSource]
+        ["hiddenDates", [], props => props.hiddenDatesDataSource],
+        ["dataAttributes", [], props => props.dataAttributes]
     ];
 
 /**
@@ -207,6 +224,12 @@ export function withClearedOptions(
 ): { options: TimelineOptions; applied: TimelineOptions } {
     const options: Record<string, unknown> = { ...next };
     const applied: Record<string, unknown> = { ...next };
+    // vis-timeline starts rolling again whenever it is handed `rollingMode.follow: true`, which
+    // would undo the user dragging away, or a command stopping it, on every unrelated change. So
+    // it is only handed over when it changed.
+    if (previous && JSON.stringify(previous.rollingMode) === JSON.stringify(next.rollingMode)) {
+        delete options.rollingMode;
+    }
     for (const [key, value, source] of CLEARED_OPTIONS) {
         if (!previous || !(key in previous) || key in next) {
             continue;
@@ -230,9 +253,17 @@ function assignIfDefined<K extends keyof TimelineOptions>(
     }
 }
 
-/** Formats a label with the moment format configured for the scale the time axis is showing. */
-function labelFormatter(formats: LabelFormats): (date: VisMoment, scale: string) => string {
+/**
+ * Formats a label with the moment format configured for the scale the time axis is showing.
+ * vis-timeline skips its own rules for a format given as a function, so the one for minor labels
+ * is repeated here: on the week scale, the first of a month that is not the start of a week gets no
+ * label, or its week number would be drawn twice.
+ */
+function labelFormatter(formats: LabelFormats, minor = false): (date: VisMoment, scale: string) => string {
     return (date, scale) => {
+        if (minor && scale === "week" && date.date() === 1 && date.weekday() !== 0) {
+            return "";
+        }
         const format = formats[scale];
         return format ? date.format(format) : "";
     };

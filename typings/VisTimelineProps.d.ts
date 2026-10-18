@@ -179,8 +179,6 @@ export interface VisTimelineContainerProps {
     editableOverrideItems: boolean;
     itemsAlwaysDraggableItem: boolean;
     itemsAlwaysDraggableRange: boolean;
-    groupEditableAdd: DynamicValue<boolean>;
-    groupEditableRemove: DynamicValue<boolean>;
     groupEditableOrder: DynamicValue<boolean>;
     IsSnap: DynamicValue<boolean>;
     snapMinutes: number;
@@ -215,9 +213,7 @@ export interface VisTimelineContainerProps {
     moveAction?: ActionValue<{ movedItemID: Option<string>; movedStart: Option<Date>; movedEnd: Option<Date>; movedGroupID: Option<string> }>;
     movingAction?: ActionValue<{ movingItemID: Option<string>; movingStart: Option<Date>; movingEnd: Option<Date>; movingGroupID: Option<string> }>;
     onRemoveAction?: ActionValue<{ data: Option<string>; removedItemID: Option<string> }>;
-    addGroupAction?: ActionValue<{ addedGroupJSON: Option<string> }>;
     moveGroupAction?: ActionValue<{ movedGroupID: Option<string> }>;
-    removeGroupAction?: ActionValue<{ removedGroupID: Option<string> }>;
     groupOrderSwapAction?: ActionValue<{ swapGroupID: Option<string>; swapGroupOrderValue: Option<Big>; swapOtherGroupID: Option<string>; swapOtherGroupOrderValue: Option<Big> }>;
     groupDraggedAction?: ActionValue<{ draggedGroupID: Option<string> }>;
     commandAttribute?: EditableValue<string>;
@@ -368,8 +364,6 @@ export interface VisTimelinePreviewProps {
     editableOverrideItems: boolean;
     itemsAlwaysDraggableItem: boolean;
     itemsAlwaysDraggableRange: boolean;
-    groupEditableAdd: string;
-    groupEditableRemove: string;
     groupEditableOrder: string;
     IsSnap: string;
     snapMinutes: number | null;
@@ -404,9 +398,7 @@ export interface VisTimelinePreviewProps {
     moveAction: {} | null;
     movingAction: {} | null;
     onRemoveAction: {} | null;
-    addGroupAction: {} | null;
     moveGroupAction: {} | null;
-    removeGroupAction: {} | null;
     groupOrderSwapAction: {} | null;
     groupDraggedAction: {} | null;
     commandAttribute: string;

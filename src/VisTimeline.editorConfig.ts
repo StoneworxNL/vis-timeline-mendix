@@ -197,7 +197,12 @@ export function check(values: VisTimelinePreviewProps): Problem[] {
             message: "Group order is set to Order value, so an Order value attribute has to be selected."
         });
     }
-    if (values.groupEditableOrder && values.groupEditableOrder !== "false" && values.groupOrderMode !== "value") {
+    if (
+        values.VisGroupsDataSource &&
+        values.groupEditableOrder &&
+        values.groupEditableOrder !== "false" &&
+        values.groupOrderMode !== "value"
+    ) {
         problems.push({
             property: "groupOrderMode",
             severity: "warning",

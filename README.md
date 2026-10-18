@@ -64,17 +64,17 @@ still match each other. Ids are also reported back to microflows as strings.
 Write one of these values into the attribute bound to **Command** (Advanced → Control). The widget runs it and clears
 the attribute again, so the same command can be used twice in a row.
 
-| Command                            | Effect                                            |
-| ---------------------------------- | ------------------------------------------------- |
-| `fit`                              | Move the window so all items fit                  |
-| `redraw`                           | Force a redraw                                    |
-| `zoomIn` / `zoomOut`               | Zoom by 50%, or by `zoomIn:0.2`                   |
-| `moveLeft` / `moveRight`           | Move by 20% of the window, or by `moveLeft:0.5`   |
-| `toggleRollingMode`                | Turn rolling mode on or off                       |
-| `focus:<id>`                       | Centre on one item, or several with `focus:1,2,3` |
-| `focusSelection`                   | Centre on the current selection                   |
-| `moveTo:<ISO date>`                | Centre on a moment in time                        |
-| `setWindow:<ISO start>\|<ISO end>` | Set both bounds at once                           |
+| Command                            | Effect                                                                |
+| ---------------------------------- | --------------------------------------------------------------------- |
+| `fit`                              | Move the window so all items fit                                      |
+| `redraw`                           | Force a redraw                                                        |
+| `zoomIn` / `zoomOut`               | Zoom by 50%, or by `zoomIn:0.2`                                       |
+| `moveLeft` / `moveRight`           | Show earlier / later dates, by 20% of the window or by `moveLeft:0.5` |
+| `toggleRollingMode`                | Turn rolling mode on or off                                           |
+| `focus:<id>`                       | Centre on one item, or several with `focus:1,2,3`                     |
+| `focusSelection`                   | Centre on the current selection                                       |
+| `moveTo:<ISO date>`                | Centre on a moment in time                                            |
+| `setWindow:<ISO start>\|<ISO end>` | Set both bounds at once                                               |
 
 When rolling mode is on, `fit`, `focus`, `focusSelection`, `moveTo`, `setWindow` and the move commands turn it off
 first, since the rolling window would otherwise pull the view straight back to the current time. The zoom commands keep
@@ -104,11 +104,12 @@ both run.
 
 ### Editing behaviour
 
-The **Editing** tab's _Allow add_, _Allow remove_, _Allow drag in time_, _Allow drag between groups_, _Allow add group_,
-_Allow remove group_, _Allow reorder groups_ and _Apply snapping?_ are expressions that default to `true`, so a new
-timeline is editable straight away. Set one to `false`, or to an expression such as `$currentObject/IsLocked = false`,
-to switch it off. Per item editability attributes win over these settings unless **Timeline settings override items** is
-on.
+The **Editing** tab's _Allow add_, _Allow remove_, _Allow drag in time_, _Allow drag between groups_, _Allow reorder
+groups_ and _Apply snapping?_ are expressions that default to `true`, so a new timeline is editable straight away. Set
+one to `false`, or to an expression such as `$currentObject/IsLocked = false`, to switch it off. Per item editability
+attributes win over these settings unless **Timeline settings override items** is on. A per item attribute that is not
+mapped falls back to these settings, so mapping only _Editable: update time_ leaves removing and dragging between groups
+to the timeline settings.
 
 vis-timeline expects an answer while the user is still dragging, which a Mendix action cannot give. The three **Editing
 → Behaviour** properties decide what happens in the meantime:
@@ -199,7 +200,7 @@ example of adding a marker on double click and removing it on a second double cl
 
 ## Properties
 
-The widget has 176 properties, on the same tabs as in Studio Pro. Expand a tab to see its properties, their defaults
+The widget has 172 properties, on the same tabs as in Studio Pro. Expand a tab to see its properties, their defaults
 and, for actions, the variables they pass. Properties whose type is an expression accept a constant such as `true` or
 `'300px'` as well as an expression over the data view's object.
 
@@ -479,7 +480,7 @@ and, for actions, the variables they pass. Properties whose type is an expressio
 </details>
 
 <details>
-<summary><b>Editing</b> (15 properties)</summary>
+<summary><b>Editing</b> (13 properties)</summary>
 
 <img alt="The Editing tab in Studio Pro, here with editing switched off" src="images/studio-pro/tab-editing.png" width="600"/>
 
@@ -499,8 +500,6 @@ and, for actions, the variables they pass. Properties whose type is an expressio
 
 | Property             | Type       | Default | Description                                                                                        |
 | -------------------- | ---------- | ------- | -------------------------------------------------------------------------------------------------- |
-| Allow add group      | Expression | `true`  | Allow dragging an item onto the group area to create a group.                                      |
-| Allow remove group   | Expression | `true`  | Allow removing groups.                                                                             |
 | Allow reorder groups | Expression | `true`  | Allow dragging groups to reorder them. Requires an Order value and Group order set to Order value. |
 
 #### Editing → Snapping
@@ -521,7 +520,7 @@ and, for actions, the variables they pass. Properties whose type is an expressio
 </details>
 
 <details>
-<summary><b>Events</b> (33 properties)</summary>
+<summary><b>Events</b> (31 properties)</summary>
 
 <img alt="The Events tab in Studio Pro" src="images/studio-pro/tab-events.png" width="600"/>
 
@@ -577,9 +576,7 @@ and, for actions, the variables they pass. Properties whose type is an expressio
 
 | Property            | Type   | Default | Description                                                                                                                                                                                                                      |
 | ------------------- | ------ | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| On add group        | Action |         | Triggered when a new group is created. Variables: Added group JSON (String).                                                                                                                                                     |
 | On move group       | Action |         | Triggered when a group is moved. Variables: Group ID (String).                                                                                                                                                                   |
-| On remove group     | Action |         | Triggered when a group is removed. Variables: Group ID (String).                                                                                                                                                                 |
 | On group order swap | Action |         | Triggered when two groups swap places by dragging. Persist both order values to make the new order stick. Variables: Group ID (String), Group order value (Integer), Other group ID (String), Other group order value (Integer). |
 | On group dragged    | Action |         | Triggered when a group has been dragged to a new place. Variables: Group ID (String).                                                                                                                                            |
 
@@ -601,12 +598,12 @@ and, for actions, the variables they pass. Properties whose type is an expressio
 
 #### Advanced → Escape hatches
 
-| Property               | Type       | Default | Description                                                                                                                    |
-| ---------------------- | ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Data attributes        | Expression |         | Copy item fields onto the item element as data- attributes. Use 'all' or a comma separated list such as 'id,start,end'.        |
-| Disable XSS protection | Boolean    | `false` | Render item and group content as raw HTML. Only enable this when the content is trusted.                                       |
-| Show loading overlay   | Boolean    | `true`  | Dim the timeline and show a spinner while the data sources are loading.                                                        |
-| Extra options (JSON)   | Expression |         | JSON object merged into the vis-timeline options after all properties above, for any option that is not exposed as a property. |
+| Property               | Type       | Default | Description                                                                                                                                                                             |
+| ---------------------- | ---------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Data attributes        | Expression |         | Copy item fields onto the item element as data- attributes. Use 'all' or a comma separated list such as 'id,start,end'.                                                                 |
+| Disable XSS protection | Boolean    | `false` | Render the item content, group content and item tooltips of this timeline as raw HTML. Other timelines on the page keep their protection. Only enable this when the content is trusted. |
+| Show loading overlay   | Boolean    | `true`  | Dim the timeline and show a spinner while the data sources are loading.                                                                                                                 |
+| Extra options (JSON)   | Expression |         | JSON object merged into the vis-timeline options after all properties above, for any option that is not exposed as a property.                                                          |
 
 </details>
 
@@ -644,13 +641,15 @@ it working for everyone.
     from the browser and can be crafted, and **On drop** accepts text dragged in from any site. Microflows must check
     access and validate these values, and never commit straight from them. Prefer the actions under **Events → Item**,
     which receive the Mendix object itself.
--   **XSS protection** is on unless the **Disable XSS protection** property turns it off. `xss` in **Extra options
-    (JSON)** is ignored, so the JSON cannot switch it off behind the property's back.
+-   **XSS protection** is on unless the **Disable XSS protection** property turns it off, and then only for that
+    timeline: vis-timeline's sanitizer is shared by every timeline on the page, so the widget never switches it off and
+    hands the content of that one timeline over as markup instead. `xss` in **Extra options (JSON)** is ignored, so the
+    JSON cannot switch it off behind the property's back.
 -   **Extra options (JSON)** never merges `__proto__`, `constructor` or `prototype` keys.
 
 ## Upgrading from the first version
 
-The property keys of the first version are all still there, so existing pages keep their mappings. Three behaviours did
+The property keys of the first version are all still there, so existing pages keep their mappings. Four behaviours did
 change, and pages built against the old widget need a look:
 
 -   **On update** used to fire whenever the data source changed, which also meant a microflow could trigger itself. It
@@ -659,6 +658,8 @@ change, and pages built against the old widget need a look:
     _array_ for add and update, and the bare item id for remove - which is now a separate `Item ID` variable.
 -   **Fit to items** defaults to _On first load_. The old widget refitted on every data change, which is the _Every data
     change_ option.
+-   Nested groups start expanded when **Show nested groups** is not mapped, which is vis-timeline's default. The old
+    widget collapsed them. Map **Show nested groups** to an attribute that is `false` to start them collapsed.
 
 ## Examples page coverage
 

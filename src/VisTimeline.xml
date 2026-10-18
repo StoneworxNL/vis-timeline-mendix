@@ -855,16 +855,6 @@
                 </property>
             </propertyGroup>
             <propertyGroup caption="Groups">
-                <property key="groupEditableAdd" type="expression" defaultValue="true">
-                    <caption>Allow add group</caption>
-                    <description>Allow dragging an item onto the group area to create a group.</description>
-                    <returnType type="Boolean" />
-                </property>
-                <property key="groupEditableRemove" type="expression" defaultValue="true">
-                    <caption>Allow remove group</caption>
-                    <description>Allow removing groups.</description>
-                    <returnType type="Boolean" />
-                </property>
                 <property key="groupEditableOrder" type="expression" defaultValue="true">
                     <caption>Allow reorder groups</caption>
                     <description>Allow dragging groups to reorder them. Requires an Order value and Group order set to Order value.</description>
@@ -1134,25 +1124,11 @@
                 </property>
             </propertyGroup>
             <propertyGroup caption="Group manipulation">
-                <property key="addGroupAction" type="action" required="false">
-                    <caption>On add group</caption>
-                    <description>Triggered when a new group is created.</description>
-                    <actionVariables>
-                        <actionVariable key="addedGroupJSON" type="String" caption="Added group JSON" />
-                    </actionVariables>
-                </property>
                 <property key="moveGroupAction" type="action" required="false">
                     <caption>On move group</caption>
                     <description>Triggered when a group is moved.</description>
                     <actionVariables>
                         <actionVariable key="movedGroupID" type="String" caption="Group ID" />
-                    </actionVariables>
-                </property>
-                <property key="removeGroupAction" type="action" required="false">
-                    <caption>On remove group</caption>
-                    <description>Triggered when a group is removed.</description>
-                    <actionVariables>
-                        <actionVariable key="removedGroupID" type="String" caption="Group ID" />
                     </actionVariables>
                 </property>
                 <property key="groupOrderSwapAction" type="action" required="false">
@@ -1224,7 +1200,7 @@
                 </property>
                 <property key="xssDisabled" type="boolean" defaultValue="false">
                     <caption>Disable XSS protection</caption>
-                    <description>Render item and group content as raw HTML. Only enable this when the content is trusted.</description>
+                    <description>Render the item content, group content and item tooltips of this timeline as raw HTML. Other timelines on the page keep their protection. Only enable this when the content is trusted.</description>
                 </property>
                 <property key="showLoadingOverlay" type="boolean" defaultValue="true">
                     <caption>Show loading overlay</caption>

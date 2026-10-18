@@ -2,7 +2,7 @@ import { buildStaticOptions, optionsSignature, withClearedOptions } from "../opt
 import { attribute, containerProps, dateAttribute, dynamic, listValue, Row } from "../testUtils";
 
 /** Stands in for a moment instance: formatting returns the format string itself. */
-const fakeMoment = { format: (format: string) => format };
+const fakeMoment = { format: (format: string) => format, date: () => 15, weekday: () => 3 };
 
 describe("buildStaticOptions", () => {
     it("starts from the same defaults as vis-timeline itself", () => {
@@ -68,7 +68,7 @@ describe("buildStaticOptions", () => {
             } as any)
         );
         expect(options.editable).toMatchObject({ add: true, updateTime: true, remove: false });
-        expect(options.groupEditable).toMatchObject({ order: true, add: false });
+        expect(options.groupEditable).toEqual({ order: true });
     });
 
     it("switches multi select on when the selection property is set to Multi", () => {
@@ -93,7 +93,32 @@ describe("buildStaticOptions", () => {
             containerProps({ locale: dynamic("nl"), localeCurrentLabel: dynamic("nu") } as any)
         ) as any;
         expect(options.locale).toBe("nl");
-        expect(options.locales).toEqual({ nl: { current: "nu" } });
+        // setOptions replaces the locales as a whole, so the rest of vis-timeline's Dutch stays in.
+        expect(options.locales.nl).toEqual({ current: "nu", time: "tijd", deleteSelected: "Selectie verwijderen" });
+        expect(options.locales.en.time).toBe("time");
+    });
+
+    it("hands over vis-timeline's own wording for a locale it keys differently, or falls back to English", () => {
+        const canadian = buildStaticOptions(containerProps({ locale: dynamic("fr-CA") } as any)) as any;
+        expect(canadian.locales[canadian.locale].current).toBe("actuel");
+        const unknown = buildStaticOptions(
+            containerProps({ locale: dynamic("hy-am"), localeTimeLabel: dynamic("ժամ") } as any)
+        ) as any;
+        expect(unknown.locales[unknown.locale]).toEqual({
+            current: "current",
+            time: "ժամ",
+            deleteSelected: "Delete selected"
+        });
+    });
+
+    it("leaves the first of a month without a week number, as vis-timeline does", () => {
+        const format = buildStaticOptions(containerProps()).format as any;
+        const firstOfMonth = { ...fakeMoment, date: () => 1, weekday: () => 3 };
+        const mondayFirst = { ...fakeMoment, date: () => 1, weekday: () => 0 };
+        expect(format.minorLabels(firstOfMonth, "week")).toBe("");
+        expect(format.minorLabels(mondayFirst, "week")).not.toBe("");
+        expect(format.minorLabels(fakeMoment, "week")).not.toBe("");
+        expect(format.minorLabels(firstOfMonth, "day")).not.toBe("");
     });
 
     it("parses the label formats and ignores a malformed one", () => {
@@ -159,15 +184,16 @@ describe("buildStaticOptions", () => {
         const options = buildStaticOptions(
             containerProps({ optionsJson: dynamic('{"xss":{"disabled":true},"stack":false}') } as any)
         ) as any;
-        expect(options.xss).toEqual({ disabled: false });
+        expect(options.xss).toEqual({ disabled: false, filterOptions: {} });
         expect(options.stack).toBe(false);
         expect(warn).toHaveBeenCalled();
         warn.mockRestore();
     });
 
-    it("lets the explicit property turn XSS protection off", () => {
+    it("never switches vis-timeline's sanitizer off, since it is shared by every timeline on the page", () => {
         expect((buildStaticOptions(containerProps({ xssDisabled: true } as any)) as any).xss).toEqual({
-            disabled: true
+            disabled: false,
+            filterOptions: {}
         });
     });
 
@@ -231,6 +257,25 @@ describe("withClearedOptions", () => {
         // ...so the periods are still cleared when the refreshed data source turns out to be empty.
         const settled = containerProps({ hiddenDatesDataSource: listValue([]) } as any);
         expect(withClearedOptions(settled, applied, {}).options).toEqual({ hiddenDates: [] });
+    });
+
+    it("clears the data attributes too", () => {
+        const { options } = withClearedOptions(containerProps(), { dataAttributes: ["id"] } as any, {});
+        expect(options).toEqual({ dataAttributes: [] });
+    });
+
+    it("only hands rolling mode over when it changed, since vis-timeline restarts rolling for it", () => {
+        const rolling = { follow: true, offset: 0.5 };
+        expect(withClearedOptions(containerProps(), { rollingMode: rolling }, { rollingMode: { ...rolling } })).toEqual(
+            {
+                options: {},
+                applied: { rollingMode: rolling }
+            }
+        );
+        const moved = { follow: true, offset: 0.25 };
+        expect(withClearedOptions(containerProps(), { rollingMode: rolling }, { rollingMode: moved }).options).toEqual({
+            rollingMode: moved
+        });
     });
 
     it("leaves an option that is still set to the new options", () => {

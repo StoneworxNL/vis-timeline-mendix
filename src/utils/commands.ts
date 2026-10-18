@@ -41,10 +41,10 @@ export function runCommand(
             timeline.zoomOut(parseFloat(argument) || 0.5, zoomAnimation);
             return true;
         case "moveleft":
-            moveWindow(timeline, -(parseFloat(argument) || 0.2), animation);
+            moveWindow(timeline, parseFloat(argument) || 0.2, animation);
             return true;
         case "moveright":
-            moveWindow(timeline, parseFloat(argument) || 0.2, animation);
+            moveWindow(timeline, -(parseFloat(argument) || 0.2), animation);
             return true;
         case "togglerollingmode":
             timeline.toggleRollingMode();
@@ -93,14 +93,15 @@ function isRolling(timeline: Timeline): boolean {
     return (timeline as unknown as { range?: { rolling?: boolean } }).range?.rolling === true;
 }
 
-function stopRolling(timeline: Timeline): void {
+export function stopRolling(timeline: Timeline): void {
     if (isRolling(timeline)) {
         timeline.toggleRollingMode();
     }
 }
 
 /** Shifts the visible window by a fraction of its own width, the way the navigation menu example
- *  of vis-timeline does it. */
+ *  of vis-timeline does it: a positive fraction shows earlier dates (moveLeft), a negative one later
+ *  dates (moveRight). */
 function moveWindow(timeline: Timeline, percentage: number, animation: TimelineAnimationOptions): void {
     const { start, end } = timeline.getWindow();
     const interval = end.valueOf() - start.valueOf();
