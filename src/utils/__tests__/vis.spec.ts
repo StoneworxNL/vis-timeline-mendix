@@ -24,6 +24,22 @@ describe("snapToMinutes", () => {
     });
 });
 
+describe("snapToMinutes around daylight saving", () => {
+    // Only meaningful in a zone with daylight saving, so each runs when TZ names its zone.
+    const zoned = (zone: string): boolean => Intl.DateTimeFormat().resolvedOptions().timeZone === zone;
+
+    (zoned("Europe/Lisbon") ? it : it.skip)("snaps a time in the skipped hour forward to when the clocks jump", () => {
+        // 29 Mar 2026: 01:00 becomes 02:00. 00:55 rounds to the hour that does not exist.
+        const snapped = snapToMinutes(new Date(2026, 2, 29, 0, 55), 60, undefined);
+        expect([snapped.getHours(), snapped.getMinutes()]).toEqual([2, 0]);
+    });
+
+    (zoned("Europe/Amsterdam") ? it : it.skip)("snaps to midnight on the day the clocks go back", () => {
+        const snapped = snapToMinutes(new Date(2026, 9, 25, 14, 10), 1440, undefined);
+        expect([snapped.getDate(), snapped.getHours()]).toEqual([26, 0]);
+    });
+});
+
 describe("builtInLocale", () => {
     it("finds vis-timeline's wording however the locale is written", () => {
         expect(builtInLocale("nl")?.current).toBe("huidige");

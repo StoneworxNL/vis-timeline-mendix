@@ -342,17 +342,17 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         dropContainers(["group"], removed);
 
         const hasGroups = groups.length > 0;
-        // vis-timeline only applies subgroup visibility when it lays the groups out from scratch, so a
-        // change to it re-attaches the groups, the way the vis-timeline example does.
         const subgroupVisibility = JSON.stringify(groups.map(group => [group.id, group.subgroupVisibility]));
         const visibilityChanged =
             groupsAttachedRef.current && subgroupVisibility !== appliedSubgroupVisibilityRef.current;
         appliedSubgroupVisibilityRef.current = subgroupVisibility;
-        if (hasGroups !== groupsAttachedRef.current || (hasGroups && visibilityChanged)) {
+        if (hasGroups !== groupsAttachedRef.current) {
             groupsAttachedRef.current = hasGroups;
             timeline.setGroups(
                 hasGroups ? (groupsDataSetRef.current as unknown as DataGroupCollectionType) : undefined
             );
+        } else if (hasGroups && visibilityChanged) {
+            applySubgroupVisibility(timeline, groups);
         }
     }, [groups, groupsSettled, dropContainers]);
 
@@ -585,6 +585,32 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
             {renderPortals(containersRef.current, objectsRef.current, props)}
         </div>
     );
+}
+
+interface TimelineInternals {
+    itemSet?: {
+        groups?: Record<string, { subgroupVisibility?: Record<string, boolean> } | undefined>;
+        markDirty?: (options: { restackGroups: boolean }) => void;
+    };
+}
+
+/**
+ * vis-timeline only hides the items of an invisible subgroup when it restacks a group, and an update
+ * of a group's data merges the visibility into what it had without asking for one. Re-attaching all
+ * groups does restack, but draws every item visible for a frame first. So the visibility of each
+ * group is replaced as a whole (a subgroup that left the data source becomes visible again) and the
+ * groups are restacked in place.
+ */
+function applySubgroupVisibility(timeline: Timeline, groups: VisGroup[]): void {
+    const itemSet = (timeline as unknown as TimelineInternals).itemSet;
+    for (const group of groups) {
+        const target = itemSet?.groups?.[group.id];
+        if (target) {
+            target.subgroupVisibility = { ...group.subgroupVisibility };
+        }
+    }
+    itemSet?.markDirty?.({ restackGroups: true });
+    timeline.redraw();
 }
 
 /**

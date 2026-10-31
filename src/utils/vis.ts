@@ -129,7 +129,10 @@ export function snapToMinutes(date: Date, minutes: number, offset: string | unde
     const shift = utcOffsetMinutes(date, offset) * 60000;
     const local = Math.round((date.valueOf() + shift) / interval) * interval;
     // The offset can differ on the snapped date when the two sit on either side of a daylight
-    // saving change, so the result is shifted back with the offset that applies there.
+    // saving change, so the result is shifted back with the offset that applies there. When that
+    // offset does not hold at the result either, the snapped time falls in the hour the clocks skip,
+    // and the moment they jump forward is used.
     const guess = new Date(local - shift);
-    return new Date(local - utcOffsetMinutes(guess, offset) * 60000);
+    const corrected = new Date(local - utcOffsetMinutes(guess, offset) * 60000);
+    return utcOffsetMinutes(corrected, offset) === utcOffsetMinutes(guess, offset) ? corrected : guess;
 }

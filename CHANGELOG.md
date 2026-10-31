@@ -43,13 +43,14 @@ All notable changes to this widget are documented here. The format follows
 -   Edit events that arrive while the previous run of the same action is still busy are queued instead of dropped, so
     every group order swap and every move reaches Mendix.
 -   A per item editability attribute that is mapped on its own no longer switches the unmapped edits off for that item.
--   **Snap to minutes** rounds on the clock the axis shows, in the browser time zone or the **Time zone offset**.
+-   **Snap to minutes** rounds on the clock the axis shows, in the browser time zone or the **Time zone offset**, and a
+    time in the hour daylight saving skips snaps forward to when the clocks jump.
 -   Setting only one of **Label for current** and **Label for time** keeps vis-timeline's other wording for the locale.
 -   Rolling mode is no longer restarted by an unrelated property change, and a focus leaves rolling mode first.
 -   The first fit no longer overrides a **Window start** or **Window end** set on its own, or the focus on a selection
     the page opens with.
 -   Week numbers are no longer drawn twice at the start of a month.
--   Hidden subgroups no longer flash while the subgroups data source refreshes.
+-   Hidden subgroups no longer flash when their visibility changes or the subgroups data source refreshes.
 -   With **Show loading overlay** off, the timeline is no longer dimmed while it loads.
 -   Markers without a tooltip show vis-timeline's own time tooltip again, and a cleared **Data attributes** is applied.
 -   The group order warning in Studio Pro only shows when a groups data source is configured.
