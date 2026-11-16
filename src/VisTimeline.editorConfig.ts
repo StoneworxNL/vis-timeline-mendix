@@ -210,6 +210,43 @@ export function check(values: VisTimelinePreviewProps): Problem[] {
             url: DOCS_URL
         });
     }
+    // A kept edit with no action to hear about it is never saved; the next refresh of the data
+    // source drops a kept add, and a kept move or remove lasts only until the item changes.
+    const allowed = (expression: string): boolean => expression?.trim() !== "false";
+    if (values.addMode === "addAndCallAction" && allowed(values.editableAdd) && !values.onAddAction) {
+        problems.push({
+            property: "addMode",
+            severity: "warning",
+            message:
+                "On add behaviour keeps new items on screen, but no On add action is bound to save them, so they disappear on the next refresh."
+        });
+    }
+    if (
+        values.moveMode === "moveAndCallAction" &&
+        (allowed(values.editableUpdateTime) || allowed(values.editableUpdateGroup)) &&
+        !values.moveAction &&
+        !values.itemMoveAction
+    ) {
+        problems.push({
+            property: "moveMode",
+            severity: "warning",
+            message:
+                "On move behaviour keeps moved items in their new place, but no On move or On item moved action is bound to save it, so the move is lost on the next refresh."
+        });
+    }
+    if (
+        values.removeMode === "removeAndCallAction" &&
+        allowed(values.editableRemove) &&
+        !values.onRemoveAction &&
+        !values.itemRemoveAction
+    ) {
+        problems.push({
+            property: "removeMode",
+            severity: "warning",
+            message:
+                "On remove behaviour removes items straight away, but no On remove or On item removed action is bound to delete them, so they come back on the next refresh."
+        });
+    }
     if (values.verticalScroll && !values.maxHeight) {
         problems.push({
             property: "maxHeight",

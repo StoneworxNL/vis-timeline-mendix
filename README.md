@@ -161,6 +161,9 @@ into the options after everything else, so a single nested value can be overridd
 { "orientation": { "axis": "top" }, "margin": { "item": { "vertical": 2 } } }
 ```
 
+Removing a key from the JSON while the page is open does not reset it: vis-timeline keeps the last value it was given
+until the page is opened again. Set the key to vis-timeline's default instead.
+
 JSON cannot carry functions. The options that only accept a function are covered by dedicated properties instead:
 snapping (**Snap to minutes**), item ordering (**Order value**), group ordering (**Group order**), subgroup ordering
 (**Subgroup order field**) and the manipulation callbacks.

@@ -34,6 +34,8 @@ All notable changes to this widget are documented here. The format follows
 
 -   Moves, removals and adds that Mendix refuses no longer stay on the timeline, and items the timeline created itself
     no longer show up twice once the Mendix object arrives.
+-   A kept move or removal is also put back when its action never runs, for example because the user may not execute
+    it, or a nanoflow refuses it straight away.
 -   Actions no longer go stale after the first render, and rows deleted in Mendix leave the timeline.
 -   Numeric ids, `fit()` before layout, focus on box and point items, group reordering, and axis labels in the
     configured locale.
