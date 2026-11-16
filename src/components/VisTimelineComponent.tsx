@@ -17,6 +17,7 @@ import { buildGroups, buildItems, buildMarkers, focusWindow, VisGroup, VisItem, 
 import { forgetLocalEdits, syncMarkers } from "../utils/sync";
 import { fitWithFallback, inScope, isSettled, syncWhenSettled } from "../utils/guards";
 import { createInViewReporter } from "../utils/inView";
+import { createLocalEditSettler } from "../utils/localEdits";
 import { registerDragSources } from "../utils/dragSources";
 import {
     ActionQueue,
@@ -89,7 +90,8 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
     const itemSignaturesRef = useRef(new Map<VisId, string>());
     // Items the user moved, removed or added on the timeline that Mendix has not confirmed yet.
     const localEditsRef = useRef(new Set<VisId>());
-    const localEditTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const editActionRunningRef = useRef(false);
+    const settleLocalEditsRef = useRef<() => void>(() => undefined);
     const groupSignaturesRef = useRef(new Map<VisId, string>());
     const appliedMarkersRef = useRef(new Map<VisId, VisMarker>());
     const groupsAttachedRef = useRef(false);
@@ -255,11 +257,20 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         }
     }, []);
 
-    const markLocalEdit = useCallback((id: unknown) => {
-        if (id != null) {
-            localEditsRef.current.add(String(id));
-        }
-    }, []);
+    // A refused edit leaves the Mendix data as it was, so no new data arrives to put the item back.
+    // Each edit starts a wait; once no edit action is busy, Mendix gets a moment to send what it
+    // changed, and whatever is still unconfirmed after that goes back to what Mendix has.
+    const localEdits = useMemo(
+        () =>
+            createLocalEditSettler(
+                localEditsRef.current,
+                () => editActionRunningRef.current || actionQueue.hasPending(),
+                () => settleLocalEditsRef.current(),
+                LOCAL_EDIT_SETTLE_MS
+            ),
+        [actionQueue]
+    );
+    const markLocalEdit = useCallback((id: unknown) => localEdits.mark(id), [localEdits]);
 
     const functionOptions = useMemo(
         () => buildFunctionOptions(propsRef, templateContainer, actions, markLocalEdit),
@@ -367,14 +378,13 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
             [props.itemMoveAction, props.itemRemoveAction],
             Array.from(localEditsRef.current, id => resolveItem(id)).filter(isObjectItem)
         );
-    const editActionRunningRef = useRef(editActionRunning);
     editActionRunningRef.current = editActionRunning;
 
     const syncItems = useCallback((): VisId[] | undefined => {
         // Once the edit actions are done, whatever Mendix has wins over what the user dropped.
         const running = editActionRunningRef.current || actionQueue.hasPending();
         if (!running && forgetLocalEdits(localEditsRef.current, itemSignaturesRef.current)) {
-            clearTimeout(localEditTimerRef.current);
+            localEdits.cancel();
         }
         return syncWhenSettled(
             propsRef.current.VisItemsDataSource,
@@ -382,7 +392,7 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
             itemsRef.current,
             itemSignaturesRef.current
         );
-    }, [actionQueue]);
+    }, [actionQueue, localEdits]);
 
     useEffect(() => {
         const timeline = timelineRef.current;
@@ -445,30 +455,22 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         windowEnd
     ]);
 
-    // A refused edit leaves the Mendix data as it was, so no new data arrives to put the item back.
-    // Once the edit actions have finished, Mendix gets a moment to send what it changed; whatever
-    // is still unconfirmed after that goes back to what Mendix has.
-    useEffect(() => {
-        if (editActionRunning || localEditsRef.current.size === 0) {
-            return;
-        }
-        clearTimeout(localEditTimerRef.current);
-        localEditTimerRef.current = setTimeout(() => {
-            if (timelineRef.current) {
-                const removed = syncItems();
-                if (removed) {
-                    dropContainers(["item", "frame", "tooltip"], removed);
-                }
+    settleLocalEditsRef.current = () => {
+        if (timelineRef.current) {
+            const removed = syncItems();
+            if (removed) {
+                dropContainers(["item", "frame", "tooltip"], removed);
             }
-        }, LOCAL_EDIT_SETTLE_MS);
-    }, [editActionRunning, syncItems, dropContainers]);
+        }
+    };
+    useEffect(() => localEdits.actionsChanged(editActionRunning), [localEdits, editActionRunning]);
 
     useEffect(
         () => () => {
             cancelAnimationFrame(pendingFitRef.current);
-            clearTimeout(localEditTimerRef.current);
+            localEdits.cancel();
         },
-        []
+        [localEdits]
     );
 
     useEffect(registerDragSources, []);

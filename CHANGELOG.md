@@ -15,6 +15,8 @@ All notable changes to this widget are documented here. The format follows
 -   A `Command` attribute for the imperative API (`fit`, `focus:`, `zoomIn`, `setWindow:…|…`).
 -   Marker labels, drag sources without JavaScript, and **On items in view changed**.
 -   **Extra options (JSON)** for any vis-timeline option the properties do not expose.
+-   Studio Pro warns when **On add**, **On move** or **On remove behaviour** keeps the edit on screen but no action is
+    bound to save it.
 
 ### Changed
 
