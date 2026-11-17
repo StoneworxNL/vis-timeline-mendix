@@ -7,10 +7,10 @@ The goal of this widget is full coverage: everything demonstrated on the
 [vis-timeline examples page](https://visjs.github.io/vis-timeline/examples/timeline/) can be configured from Studio Pro,
 without writing JavaScript.
 
-![Vis Timeline demo: nested groups, clustering, selection, localization and markers](images/demo.gif)
+![Vis Timeline demo: nested groups, clustering, selection, localization and markers](https://github.com/user-attachments/assets/15f5161a-3ed4-46ed-9600-bafac86c2b77)
 
 [Try the live demo](https://vistimeline-sandbox.mxapps.io) ·
-[Watch the walkthrough as a video (MP4, 1 min)](images/demo.mp4)
+[Watch the walkthrough as a video (MP4, 1 min)](https://github.com/user-attachments/assets/b225cd6e-be6d-4805-a285-6a728f722808)
 
 ## Features
 
