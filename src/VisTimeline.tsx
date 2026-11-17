@@ -1,36 +1,10 @@
 import { ReactElement } from "react";
-import { HelloWorldSample } from "./components/HelloWorldSample";
 
+import { VisTimelineComponent } from "./components/VisTimelineComponent";
 import { VisTimelineContainerProps } from "../typings/VisTimelineProps";
 
 import "./ui/VisTimeline.css";
 
-export function VisTimeline({ VisItemsDataSource, ItemID, ItemContent, Start, End, Type, IsSnap, VisGroupsDataSource, GroupIDAttr, GroupContentAttr, ItemGroupID, ItemClassName, GroupClassName, 
-        GroupValue, clickAction, doubleClickAction, onAddAction, onUpdateAction, onRemoveAction, onInitialDrawCompleteAction,
-        groupAssociation, groupVisible, groupShowNested, treeLevel }: VisTimelineContainerProps): ReactElement {
-    return <HelloWorldSample 
-                VisItemsDataSource = {VisItemsDataSource}
-                ItemID = {ItemID}
-                ItemContent = {ItemContent}
-                Start = {Start} 
-                End = {End} 
-                Type = {Type} 
-                IsSnap = {IsSnap}
-                VisGroupsDataSource = {VisGroupsDataSource}
-                GroupIDAttr = {GroupIDAttr}
-                GroupContentAttr = {GroupContentAttr}
-                ItemGroupID = {ItemGroupID} 
-                ItemClassName = {ItemClassName}
-                GroupClassName = {GroupClassName}
-                GroupValue = {GroupValue} 
-                clickAction = {clickAction}
-                doubleClickAction = {doubleClickAction} 
-                onAddAction = {onAddAction}
-                onUpdateAction = {onUpdateAction} 
-                onRemoveAction = {onRemoveAction} 
-                onInitialDrawCompleteAction = {onInitialDrawCompleteAction}
-                groupAssociation = {groupAssociation}
-                groupVisible = {groupVisible}
-                groupShowNested = {groupShowNested}
-                treeLevel = {treeLevel} />;
+export function VisTimeline(props: VisTimelineContainerProps): ReactElement {
+    return <VisTimelineComponent {...props} />;
 }
