@@ -5,8 +5,8 @@ import { splitIds, toDate, VisId } from "./values";
 
 /**
  * Runs a Mendix action, unless the platform says it cannot run or is already running. Only for the
- * events that fire many times a second (hover, moving, marker dragging, typing), where skipping a
- * run is what the property descriptions promise; edits go through an ActionQueue.
+ * events that fire many times a second (hover, moving, marker dragging, typing) and for clicks,
+ * where skipping a run is what the user expects; edits go through an ActionQueue.
  */
 export function fireAction(action: ActionValue<any> | undefined, args?: Record<string, unknown>): void {
     if (!action || !action.canExecute || action.isExecuting) {
@@ -110,6 +110,89 @@ export class ActionQueue {
         clearTimeout(this.timer);
         this.pending = [];
     }
+}
+
+export type ActionKey = {
+    [K in keyof VisTimelineContainerProps]-?: VisTimelineContainerProps[K] extends ActionValue<any> | undefined
+        ? K
+        : never;
+}[keyof VisTimelineContainerProps];
+
+export type ItemActionKey = {
+    [K in keyof VisTimelineContainerProps]-?: VisTimelineContainerProps[K] extends ListActionValue<any> | undefined
+        ? K
+        : never;
+}[keyof VisTimelineContainerProps];
+
+/**
+ * The three ways the widget runs its actions.
+ *
+ * - Edits (add, update, move, remove, group moves, drops, marker changes) are queued, so none is
+ *   lost to a busy run: skipping one leaves Mendix with data that no longer matches the screen.
+ * - The selection and the visible range are queued too, but only their newest value is kept, and
+ *   on a queue of their own, so a slow run of either never holds back the revert of a refused edit.
+ * - Clicks, double clicks, context menus and the like are skipped while their action is busy, as a
+ *   Mendix button with "Disabled during action" does. A double click emits two clicks, and
+ *   replaying those (or every impatient extra click) would, say, open a page twice.
+ */
+export interface WidgetActions {
+    /** Queues an edit action. */
+    run(key: ActionKey, args?: Record<string, unknown>): void;
+    /** Queues an edit action bound to the items data source, for the item with this id. */
+    runForItem(key: ItemActionKey, id: VisId | undefined, args?: Record<string, unknown>): void;
+    /** Queues a run where only the newest value matters, replacing one still waiting. */
+    runLatest(key: ActionKey, args?: Record<string, unknown>): void;
+    /** Runs the action unless it cannot run or is still busy. */
+    fire(key: ActionKey, args?: Record<string, unknown>): void;
+    /** Runs the item action unless it cannot run or is still busy. */
+    fireForItem(key: ItemActionKey, id: VisId | undefined, args?: Record<string, unknown>): void;
+    /** Whether an edit is still waiting to start, which counts as the edit still being made. */
+    editsPending(): boolean;
+    /** Starts queued runs whose previous run finished. Call after every render. */
+    flush(): void;
+    dispose(): void;
+}
+
+export function createWidgetActions(
+    props: () => VisTimelineContainerProps,
+    resolveItem: (id: VisId) => ObjectItem | undefined
+): WidgetActions {
+    const edits = new ActionQueue();
+    const latest = new ActionQueue();
+    const action =
+        (key: ActionKey): ActionSource =>
+        () =>
+            props()[key] as ActionValue<any> | undefined;
+    const itemAction = (key: ItemActionKey, id: VisId): ActionSource =>
+        itemActionSource(
+            () => props()[key] as ListActionValue<any> | undefined,
+            () => resolveItem(id)
+        );
+
+    return {
+        run: (key, args) => edits.run(key, action(key), args),
+        runForItem: (key, id, args) => {
+            if (id !== undefined && props()[key]) {
+                edits.run(`${key}:${id}`, itemAction(key, id), args);
+            }
+        },
+        runLatest: (key, args) => latest.run(key, action(key), args, true),
+        fire: (key, args) => fireAction(action(key)(), args),
+        fireForItem: (key, id, args) => {
+            if (id !== undefined && props()[key]) {
+                fireAction(itemAction(key, id)(), args);
+            }
+        },
+        editsPending: () => edits.hasPending(),
+        flush: () => {
+            edits.flush();
+            latest.flush();
+        },
+        dispose: () => {
+            edits.dispose();
+            latest.dispose();
+        }
+    };
 }
 
 /** The variables On add receives for an item the user created, by double click or by a drop. */

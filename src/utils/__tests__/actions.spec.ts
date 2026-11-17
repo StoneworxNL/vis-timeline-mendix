@@ -3,6 +3,7 @@ import { ActionValue, ListActionValue, ObjectItem } from "mendix";
 import {
     ActionQueue,
     awaitsConfirmation,
+    createWidgetActions,
     fireAction,
     idToString,
     itemActionSource,
@@ -11,6 +12,8 @@ import {
     wantedSelection,
     writeSelection
 } from "../actions";
+import { containerProps } from "../testUtils";
+import { VisTimelineContainerProps } from "../../../typings/VisTimelineProps";
 
 const object = (id: string): ObjectItem => ({ id } as unknown as ObjectItem);
 
@@ -267,5 +270,72 @@ describe("awaitsConfirmation", () => {
         expect(awaitsConfirmation({ ...revert, ...bound }, "add")).toBe(false);
         expect(awaitsConfirmation({ ...revert, ...bound }, "move")).toBe(false);
         expect(awaitsConfirmation({ ...revert, ...bound }, "remove")).toBe(false);
+    });
+});
+
+describe("createWidgetActions", () => {
+    function listAction(row: ActionValue): ListActionValue {
+        return { get: () => row } as unknown as ListActionValue;
+    }
+
+    function setup(overrides: Partial<VisTimelineContainerProps>): ReturnType<typeof createWidgetActions> {
+        const props = containerProps(overrides);
+        return createWidgetActions(
+            () => props,
+            id => object(id)
+        );
+    }
+
+    // Regression (review of 699b4ea): clicks went through the edit queue, so the two clicks of a
+    // double click, or every impatient extra click, were replayed one after the other.
+    it("skips a click while the click action is busy instead of replaying it", () => {
+        const click = action();
+        const actions = setup({ clickAction: click });
+        actions.fire("clickAction", { n: 1 });
+        Object.assign(click, { isExecuting: true });
+        actions.fire("clickAction", { n: 2 });
+        Object.assign(click, { isExecuting: false });
+        actions.flush();
+        expect(click.execute).toHaveBeenCalledTimes(1);
+        expect(click.execute).toHaveBeenCalledWith({ n: 1 });
+        expect(actions.editsPending()).toBe(false);
+        actions.dispose();
+    });
+
+    it("skips an item click while that item's action is busy", () => {
+        const row = action({ isExecuting: true });
+        const actions = setup({ itemClickAction: listAction(row) as any });
+        actions.fireForItem("itemClickAction", "1");
+        actions.fireForItem("itemClickAction", undefined);
+        actions.flush();
+        expect(row.execute).not.toHaveBeenCalled();
+        expect(actions.editsPending()).toBe(false);
+        actions.dispose();
+    });
+
+    it("still queues edits, so none is lost to a busy run", () => {
+        let move = action({ isExecuting: true });
+        const props = containerProps({ moveAction: move });
+        const actions = createWidgetActions(
+            () => props,
+            id => object(id)
+        );
+        actions.run("moveAction", { n: 1 });
+        expect(actions.editsPending()).toBe(true);
+        move = action();
+        props.moveAction = move;
+        actions.flush();
+        expect(move.execute).toHaveBeenCalledWith({ n: 1 });
+        expect(actions.editsPending()).toBe(false);
+        actions.dispose();
+    });
+
+    it("does not count a waiting selection or range run as an edit", () => {
+        const range = action({ isExecuting: true });
+        const actions = setup({ rangeChangedAction: range, selectAction: range });
+        actions.runLatest("rangeChangedAction", { n: 1 });
+        actions.runLatest("selectAction", { n: 1 });
+        expect(actions.editsPending()).toBe(false);
+        actions.dispose();
     });
 });

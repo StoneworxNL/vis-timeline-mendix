@@ -1,7 +1,7 @@
 import { ReactElement, ReactNode, useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { createPortal } from "react-dom";
 import classNames from "classnames";
-import { ActionValue, ListActionValue, ObjectItem } from "mendix";
+import { ObjectItem } from "mendix";
 import {
     DataGroupCollectionType,
     DataItemCollectionType,
@@ -20,15 +20,15 @@ import { createInViewReporter } from "../utils/inView";
 import { createLocalEditSettler } from "../utils/localEdits";
 import { registerDragSources } from "../utils/dragSources";
 import {
-    ActionQueue,
     addActionArgs,
     awaitsConfirmation,
+    createWidgetActions,
     fireAction,
     idToString,
-    itemActionSource,
     isAnyRunning,
     toBig,
     wantedSelection,
+    WidgetActions,
     writeSelection
 } from "../utils/actions";
 import { buildStaticOptions, optionsSignature, withClearedOptions } from "../utils/options";
@@ -53,24 +53,6 @@ type PropsRef = { current: VisTimelineContainerProps };
 
 /** Looks up the Mendix object behind a vis item id, so an action can be handed the object itself. */
 type ItemResolver = (id: VisId | undefined) => ObjectItem | undefined;
-
-type ActionKey = {
-    [K in keyof VisTimelineContainerProps]-?: VisTimelineContainerProps[K] extends ActionValue<any> | undefined
-        ? K
-        : never;
-}[keyof VisTimelineContainerProps];
-
-type ItemActionKey = {
-    [K in keyof VisTimelineContainerProps]-?: VisTimelineContainerProps[K] extends ListActionValue<any> | undefined
-        ? K
-        : never;
-}[keyof VisTimelineContainerProps];
-
-/** Runs one of the widget's actions through the queue, so a run is never lost to a busy one. */
-interface Actions {
-    run(key: ActionKey, args?: Record<string, unknown>, latestOnly?: boolean): void;
-    runForItem(key: ItemActionKey, id: VisId | undefined, args?: Record<string, unknown>): void;
-}
 
 /** How long to wait after an edit action finished for Mendix to send the changed data. */
 const LOCAL_EDIT_SETTLE_MS = 1000;
@@ -193,30 +175,11 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         return id === undefined ? undefined : objectsRef.current.items.get(id);
     }, []);
 
-    const actionQueue = useMemo(() => new ActionQueue(), []);
-    const actions = useMemo<Actions>(
-        () => ({
-            run: (key, args, latestOnly) =>
-                actionQueue.run(key, () => propsRef.current[key] as ActionValue<any> | undefined, args, latestOnly),
-            runForItem: (key, id, args) => {
-                if (id !== undefined && propsRef.current[key]) {
-                    actionQueue.run(
-                        `${key}:${id}`,
-                        itemActionSource(
-                            () => propsRef.current[key] as ListActionValue<any> | undefined,
-                            () => resolveItem(id)
-                        ),
-                        args
-                    );
-                }
-            }
-        }),
-        [actionQueue, resolveItem]
-    );
+    const actions = useMemo(() => createWidgetActions(() => propsRef.current, resolveItem), [resolveItem]);
     // Mendix reports that a run finished by rendering the widget again, which is when the next
     // queued run can start.
-    useEffect(() => actionQueue.flush());
-    useEffect(() => () => actionQueue.dispose(), [actionQueue]);
+    useEffect(() => actions.flush());
+    useEffect(() => () => actions.dispose(), [actions]);
 
     const animation = useCallback(
         (): TimelineAnimationOptions =>
@@ -264,11 +227,11 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
         () =>
             createLocalEditSettler(
                 localEditsRef.current,
-                () => editActionRunningRef.current || actionQueue.hasPending(),
+                () => editActionRunningRef.current || actions.editsPending(),
                 () => settleLocalEditsRef.current(),
                 LOCAL_EDIT_SETTLE_MS
             ),
-        [actionQueue]
+        [actions]
     );
     const markLocalEdit = useCallback((id: unknown) => localEdits.mark(id), [localEdits]);
 
@@ -372,7 +335,7 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
     const fitOnDataChange = props.fitOnDataChange;
 
     const editActionRunning =
-        actionQueue.hasPending() ||
+        actions.editsPending() ||
         isAnyRunning(
             [props.moveAction, props.onRemoveAction, props.onAddAction],
             [props.itemMoveAction, props.itemRemoveAction],
@@ -382,7 +345,7 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
 
     const syncItems = useCallback((): VisId[] | undefined => {
         // Once the edit actions are done, whatever Mendix has wins over what the user dropped.
-        const running = editActionRunningRef.current || actionQueue.hasPending();
+        const running = editActionRunningRef.current || actions.editsPending();
         if (!running && forgetLocalEdits(localEditsRef.current, itemSignaturesRef.current)) {
             localEdits.cancel();
         }
@@ -392,7 +355,7 @@ export function VisTimelineComponent(props: VisTimelineContainerProps): ReactEle
             itemsRef.current,
             itemSignaturesRef.current
         );
-    }, [actionQueue, localEdits]);
+    }, [actions, localEdits]);
 
     useEffect(() => {
         const timeline = timelineRef.current;
@@ -722,7 +685,7 @@ function mergeOptions(staticOptions: TimelineOptions, functionOptions: TimelineO
 function buildFunctionOptions(
     propsRef: PropsRef,
     templateContainer: (kind: TemplateKind, objectId: VisId) => HTMLElement,
-    actions: Actions,
+    actions: WidgetActions,
     markLocalEdit: (id: unknown) => void
 ): TimelineOptions {
     const options: TimelineOptions = {
@@ -756,7 +719,7 @@ function buildFunctionOptions(
             }
             return defaultSnap ? defaultSnap(date, scale, step) : date;
         },
-        onInitialDrawComplete: () => actions.run("onInitialDrawCompleteAction"),
+        onInitialDrawComplete: () => actions.fire("onInitialDrawCompleteAction"),
         onAdd: (item: any, callback: (item: any) => void) => {
             const props = propsRef.current;
             actions.run("onAddAction", addActionArgs(item));
@@ -865,7 +828,7 @@ function registerEvents(
     propsRef: PropsRef,
     appliedSelectionRef: { current: VisId[] },
     resolveItem: ItemResolver,
-    actions: Actions
+    actions: WidgetActions
 ): () => void {
     // Editable items emit a second, reduced `click` and `doubleClick` payload that has no `what`
     // key. Ignoring those is what keeps a microflow from running twice on a single click.
@@ -877,7 +840,7 @@ function registerEvents(
             return;
         }
         if (inScope(props.clickScope, properties, true)) {
-            actions.run("clickAction", {
+            actions.fire("clickAction", {
                 clickedItemID: idToString(properties.item),
                 clickedGroupID: idToString(properties.group),
                 clickedTime: toDate(properties.time),
@@ -885,7 +848,7 @@ function registerEvents(
                 clickedMarkerID: idToString(properties.customTime)
             });
         }
-        actions.runForItem("itemClickAction", idToString(properties.item));
+        actions.fireForItem("itemClickAction", idToString(properties.item));
     });
 
     timeline.on("doubleClick", properties => {
@@ -894,7 +857,7 @@ function registerEvents(
             return;
         }
         if (inScope(props.doubleClickScope, properties, true)) {
-            actions.run("doubleClickAction", {
+            actions.fire("doubleClickAction", {
                 doubleClickedItemID: idToString(properties.item),
                 doubleClickedGroupID: idToString(properties.group),
                 doubleClickedTime: toDate(properties.time),
@@ -902,7 +865,7 @@ function registerEvents(
                 doubleClickedMarkerID: idToString(properties.customTime)
             });
         }
-        actions.runForItem("itemDoubleClickAction", idToString(properties.item));
+        actions.fireForItem("itemDoubleClickAction", idToString(properties.item));
     });
 
     timeline.on("contextmenu", properties => {
@@ -916,14 +879,14 @@ function registerEvents(
         // Only take the browser menu away where the widget actually answers the right click.
         properties?.event?.preventDefault?.();
         if (widgetLevel) {
-            actions.run("contextMenuAction", {
+            actions.fire("contextMenuAction", {
                 contextItemID: idToString(properties.item),
                 contextGroupID: idToString(properties.group),
                 contextTime: toDate(properties.time),
                 contextWhat: properties.what ?? undefined
             });
         }
-        actions.runForItem("itemContextMenuAction", idToString(properties.item));
+        actions.fireForItem("itemContextMenuAction", idToString(properties.item));
     });
 
     timeline.on("itemover", properties =>
@@ -961,19 +924,15 @@ function registerEvents(
             attribute.setValue(joined);
         }
         writeSelection(props.itemSelection, ids.map(resolveItem).filter(isObjectItem));
-        actions.run("selectAction", { selectedItemIDs: joined }, true);
+        actions.runLatest("selectAction", { selectedItemIDs: joined });
     });
 
     timeline.on("rangechanged", properties =>
-        actions.run(
-            "rangeChangedAction",
-            {
-                rangeStart: toDate(properties?.start),
-                rangeEnd: toDate(properties?.end),
-                rangeByUser: properties?.byUser === true
-            },
-            true
-        )
+        actions.runLatest("rangeChangedAction", {
+            rangeStart: toDate(properties?.start),
+            rangeEnd: toDate(properties?.end),
+            rangeByUser: properties?.byUser === true
+        })
     );
 
     const inView = createInViewReporter(

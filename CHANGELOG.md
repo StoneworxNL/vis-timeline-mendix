@@ -34,8 +34,8 @@ All notable changes to this widget are documented here. The format follows
 
 -   Moves, removals and adds that Mendix refuses no longer stay on the timeline, and items the timeline created itself
     no longer show up twice once the Mendix object arrives.
--   A kept move or removal is also put back when its action never runs, for example because the user may not execute
-    it, or a nanoflow refuses it straight away.
+-   A kept move or removal is also put back when its action never runs, for example because the user may not execute it,
+    or a nanoflow refuses it straight away.
 -   Actions no longer go stale after the first render, and rows deleted in Mendix leave the timeline.
 -   Numeric ids, `fit()` before layout, focus on box and point items, group reordering, and axis labels in the
     configured locale.
@@ -46,6 +46,8 @@ All notable changes to this widget are documented here. The format follows
 -   Tooltips are no longer cut off at the edge of the timeline.
 -   Edit events that arrive while the previous run of the same action is still busy are queued instead of dropped, so
     every group order swap and every move reaches Mendix.
+-   Clicks, double clicks and context menus are not queued: like a Mendix button, a click that arrives while its action
+    is still busy is skipped instead of replayed afterwards.
 -   A per item editability attribute that is mapped on its own no longer switches the unmapped edits off for that item.
 -   **Snap to minutes** rounds on the clock the axis shows, in the browser time zone or the **Time zone offset**, and a
     time in the hour daylight saving skips snaps forward to when the clocks jump.
